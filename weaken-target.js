@@ -1,0 +1,1 @@
+weaken(args[0]);

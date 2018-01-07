@@ -1,0 +1,3 @@
+while(true) {
+  grow('foodnstuff');
+}

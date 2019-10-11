@@ -103,7 +103,7 @@ while (doLoop) {
   if (Math.floor(currentSecurity) > Math.floor(minSecurity)) {
     //execution times based on current security, how long to sleep, since we're using all available RAM to weaken target
     weakenExecutionTime = getWeakenTime(target);
-    weakenExecutionTime = round(weakenExecutionTime * 1000) / 1000;
+    weakenExecutionTime = Math.round(weakenExecutionTime * 1000) / 1000;
 
     threadsNeeded = Math.ceil((currentSecurity - minSecurity) / weakenThreadPotency);
     ramAvailableArray = getServerRam(hostName);
@@ -143,13 +143,13 @@ while (doLoop) {
 
     //execution times based on min security, as a best guess for how much we can do in one weaken cycle.
     weakenExecutionTime = getWeakenTime(target);
-    weakenExecutionTime = round(weakenExecutionTime * 1000) / 1000;
+    weakenExecutionTime = Math.round(weakenExecutionTime * 1000) / 1000;
 
     growExecutionTime = getGrowTime(target);
-    growExecutionTime = round(growExecutionTime * 1000) / 1000;
+    growExecutionTime = Math.round(growExecutionTime * 1000) / 1000;
 
     hackExecutionTime = getHackTime(target);
-    hackExecutionTime = round(hackExecutionTime * 1000) / 1000;
+    hackExecutionTime = Math.round(hackExecutionTime * 1000) / 1000;
 
     //one of the money multipliers, we base it off of min security, but we have to account for the offsets we've fired.
     difficultyMult = (100 - Math.min(100, minSecurity)) / 100;
@@ -162,7 +162,7 @@ while (doLoop) {
     percentMoneyHacked = Math.min(1, Math.max(0, percentMoneyHacked));
 
     threadsNeededToHack = Math.floor(percentageToSteal / percentMoneyHacked);
-    percentageToStealForDisplay = round(percentageToSteal * 100);
+    percentageToStealForDisplay = Math.round(percentageToSteal * 100);
     totalHackCost = (threadsNeededToHack * hackCost);
 
     threadsNeededToWeakenForHack = (threadsNeededToHack * hackThreadHardening);

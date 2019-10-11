@@ -41,7 +41,7 @@ while (doLoop) {
     doLoop = false;
   }
 }
-write('allServers', servers.join(';'), 'w');
+write('allServers.txt', servers.join(';'), 'w');
 
 hostName = getHostname();
 if (hostName === 'home') {

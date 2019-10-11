@@ -2,7 +2,7 @@
 hostName = getHostname();
 
 //create an object (array) to hold our servers
-servers = read('allServers');
+servers = read('allServers.txt');
 servers = servers.split(';');
 
 doLoop = true;

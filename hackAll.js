@@ -2,7 +2,7 @@ programs = ['BruteSSH.exe', 'FTPCrack.exe', 'relaySMTP.exe', 'HTTPWorm.exe', 'SQ
 scriptsToCopy = ['hack-scheduler.script', 'grow-scheduler.script', 'weaken-target.script', 'grow-target.script', 'hack-target.script', 'start.script', 'daemon.script', 'spider.script'];
 fnsScripts = ['foodNStuffGrow.script', 'foodNStuffGrow.script', 'foodNStuffHack.script', 'foodNStuffWeaken.script', 'foodNStuffGrow.script'];
 
-allServers = read('allServers');
+allServers = read('allServers.txt');
 allServers = allServers.split(';');
 allServersLength = allServers.length;
 

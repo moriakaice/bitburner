@@ -1,0 +1,8 @@
+export async function main(ns) {
+  const target = ns.args[0]
+  const threads = ns.args[1]
+
+  ns.print(`Starting operation: weaken on ${target} in ${threads} threads`)
+  await ns.weaken(target, { threads, stock: true })
+  ns.exit()
+}

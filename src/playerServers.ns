@@ -1,0 +1,137 @@
+const settings = {
+  maxPlayerServers: 25,
+  gbRamCost: 55000,
+  maxGbRam: 1048576,
+  minGbRam: 64,
+  totalMoneyAllocation: 0.9,
+  actions: {
+    BUY: 'buy',
+    UPGRADE: 'upgrade',
+  },
+  keys: {
+    serverMap: 'BB_SERVER_MAP',
+  },
+}
+
+function getItem(key) {
+  let item = localStorage.getItem(key)
+
+  return item ? JSON.parse(item) : undefined
+}
+
+function setItem(key, value) {
+  localStorage.setItem(key, JSON.stringify(value))
+}
+
+function localeHHMMSS(ms = 0) {
+  if (!ms) {
+    ms = new Date().getTime()
+  }
+
+  return new Date(ms).toLocaleTimeString()
+}
+
+function createUUID() {
+  var dt = new Date().getTime()
+  var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = (dt + Math.random() * 16) % 16 | 0
+    dt = Math.floor(dt / 16)
+    return (c == 'x' ? r : (r & 0x3) | 0x8).toString(16)
+  })
+  return uuid
+}
+
+function updateServer(ns, serverMap, host) {
+  serverMap.servers[host] = {
+    host,
+    ports: ns.getServerNumPortsRequired(host),
+    hackingLevel: ns.getServerRequiredHackingLevel(host),
+    maxMoney: ns.getServerMaxMoney(host),
+    growth: ns.getServerGrowth(host),
+    minSecurityLevel: ns.getServerMinSecurityLevel(host),
+    baseSecurityLevel: ns.getServerBaseSecurityLevel(host),
+    ram: ns.getServerRam(host)[0],
+  }
+
+  Object.keys(serverMap.servers).map((hostname) => {
+    if (!ns.serverExists(hostname)) {
+      delete serverMap.servers[hostname]
+    }
+  })
+
+  setItem(settings.keys.serverMap, serverMap)
+}
+
+export async function main(ns) {
+  let hostname = ns.getHostname()
+
+  if (hostname !== 'home') {
+    throw new Exception('Run the script from home')
+  }
+
+  while (true) {
+    let didChange = false
+
+    const serverMap = getItem(settings.keys.serverMap)
+    let purchasedServers = ns.getPurchasedServers()
+    if (purchasedServers.length) {
+      purchasedServers.sort((a, b) => ns.getServerRam(a).shift() - ns.getServerRam(b).shift())
+    }
+
+    let action = purchasedServers.length < settings.maxPlayerServers ? settings.actions.BUY : settings.actions.UPGRADE
+
+    if (action == settings.actions.BUY) {
+      let smallestCurrentServer = purchasedServers.length ? ns.getServerRam(purchasedServers[0]).shift() : 0
+      let targetRam = Math.max(settings.minGbRam, smallestCurrentServer)
+
+      if (ns.getServerMoneyAvailable('home') * settings.totalMoneyAllocation >= targetRam * settings.gbRamCost) {
+        const hostname = `pserv-${targetRam}-${createUUID()}`
+
+        await ns.purchaseServer(hostname, targetRam)
+        ns.tprint(`[${localeHHMMSS()}] Bought new server: ${hostname}`)
+        await ns.sleep(1000)
+
+        updateServer(ns, serverMap, hostname)
+        didChange = true
+      }
+    } else {
+      let smallestCurrentServer = Math.max(ns.getServerRam(purchasedServers[0]).shift(), settings.minGbRam)
+      let biggestCurrentServer = ns.getServerRam(purchasedServers[purchasedServers.length - 1]).shift()
+      let targetRam = biggestCurrentServer
+
+      if (smallestCurrentServer === settings.maxGbRam) {
+        ns.exit()
+        return
+      }
+
+      if (smallestCurrentServer === biggestCurrentServer) {
+        while (ns.getServerMoneyAvailable('home') * settings.totalMoneyAllocation >= targetRam * settings.gbRamCost) {
+          targetRam *= 2
+        }
+
+        targetRam /= 2
+      }
+
+      if (targetRam > ns.getServerRam(purchasedServers[0]).shift()) {
+        if (ns.getServerMoneyAvailable('home') * settings.totalMoneyAllocation >= targetRam * settings.gbRamCost) {
+          const hostname = `pserv-${targetRam}-${createUUID()}`
+
+          await ns.killall(purchasedServers[0])
+          await ns.sleep(5000)
+          await ns.deleteServer(purchasedServers[0])
+          await ns.sleep(1000)
+          await ns.purchaseServer(hostname, targetRam)
+          ns.tprint(`[${localeHHMMSS()}] Upgraded: ${purchasedServers[0]} into server: ${hostname}`)
+          await ns.sleep(1000)
+
+          updateServer(ns, serverMap, hostname)
+          didChange = true
+        }
+      }
+    }
+
+    if (!didChange) {
+      await ns.sleep(15000)
+    }
+  }
+}

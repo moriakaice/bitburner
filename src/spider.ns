@@ -1,0 +1,64 @@
+import { settings, setItem } from 'common.ns'
+
+const hackPrograms = ['BruteSSH.exe', 'FTPCrack.exe', 'relaySMTP.exe', 'HTTPWorm.exe', 'SQLInject.exe']
+
+function getPlayerDetails(ns) {
+  let portHacks = 0
+
+  hackPrograms.forEach((hackProgram) => {
+    if (ns.fileExists(hackProgram, 'home')) {
+      portHacks += 1
+    }
+  })
+
+  return {
+    hackingLevel: ns.getHackingLevel(),
+    portHacks,
+  }
+}
+
+export async function main(ns) {
+  let hostname = ns.getHostname()
+
+  if (hostname !== 'home') {
+    throw new Exception('Run the script from home')
+  }
+
+  const serverMap = { servers: {}, lastUpdate: new Date().getTime() }
+  const scanArray = ['home']
+
+  while (scanArray.length) {
+    const host = scanArray.shift()
+
+    serverMap.servers[host] = {
+      host,
+      ports: ns.getServerNumPortsRequired(host),
+      hackingLevel: ns.getServerRequiredHackingLevel(host),
+      maxMoney: ns.getServerMaxMoney(host),
+      growth: ns.getServerGrowth(host),
+      minSecurityLevel: ns.getServerMinSecurityLevel(host),
+      baseSecurityLevel: ns.getServerBaseSecurityLevel(host),
+      ram: ns.getServerRam(host)[0],
+    }
+
+    const playerDetails = getPlayerDetails(ns)
+    if (!ns.hasRootAccess(host)) {
+      if (serverMap.servers[host].ports <= playerDetails.portHacks && serverMap.servers[host].hackingLevel <= playerDetails.hackingLevel) {
+        hackPrograms.forEach((hackProgram) => {
+          if (ns.fileExists(hackProgram, 'home')) {
+            ns[hackProgram.split('.').shift().toLocaleLowerCase()](host)
+          }
+        })
+        ns.nuke(host)
+      }
+    }
+
+    ns.scan(host)
+      .filter((hostname) => !serverMap.servers[hostname])
+      .forEach((hostname) => scanArray.push(hostname))
+  }
+
+  setItem(settings().keys.serverMap, serverMap)
+
+  ns.spawn('mainHack.ns', 1)
+}

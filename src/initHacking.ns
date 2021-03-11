@@ -17,5 +17,13 @@ export async function main(ns) {
     await ns.wget(path, filename)
   }
 
-  ns.spawn('spider.ns', 1)
+  const homeRam = ns.getServerRam('home').shift()
+
+  if (homeRam >= 32) {
+    await ns.run('spider.ns')
+    await ns.sleep(3000)
+    ns.spawn('playerServers.ns', 1)
+  } else {
+    ns.spawn('spider.ns', 1)
+  }
 }

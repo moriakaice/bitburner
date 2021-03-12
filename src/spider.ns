@@ -17,6 +17,14 @@ function getPlayerDetails(ns) {
   }
 }
 
+function allHacks(host) {
+  ns.brutessh(host)
+  ns.ftpcrack(host)
+  ns.relaysmtp(host)
+  ns.httpworm(host)
+  ns.sqlinject(host)
+}
+
 export async function main(ns) {
   let hostname = ns.getHostname()
 

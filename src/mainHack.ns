@@ -108,10 +108,7 @@ function findTargetServer(ns, serversList, servers) {
     .filter((hostname) => hostname !== 'home')
 
   let weightedServers = serversList.map((hostname) => {
-    const serverValue =
-      servers[hostname].maxMoney *
-      (settings.minSecurityWeight / servers[hostname].minSecurityLevel) *
-      (settings.minSecurityWeight / ns.getServerSecurityLevel(hostname))
+    const serverValue = servers[hostname].maxMoney * (settings.minSecurityWeight / (servers[hostname].minSecurityLevel + ns.getServerSecurityLevel(hostname)))
 
     return { hostname, serverValue }
   })
@@ -199,7 +196,7 @@ export async function main(ns) {
 
       ns.tprint(
         `[${localeHHMMSS()}] Cycles ratio: ${growCycles} grow cycles; ${weakenCycles} weaken cycles; expected security reduction: ${
-          settings.changes.weaken * weakenCycles
+          Math.floor(settings.changes.weaken * weakenCycles * 1000) / 1000
         }`
       )
 

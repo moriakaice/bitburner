@@ -108,7 +108,10 @@ function findTargetServer(ns, serversList, servers) {
     .filter((hostname) => hostname !== 'home')
 
   let weightedServers = serversList.map((hostname) => {
-    const serverValue = servers[hostname].maxMoney * (settings.minSecurityWeight / servers[hostname].minSecurityLevel)
+    const serverValue =
+      servers[hostname].maxMoney *
+      (settings.minSecurityWeight / servers[hostname].minSecurityLevel) *
+      (settings.minSecurityWeight / ns.getServerSecurityLevel(hostname))
 
     return { hostname, serverValue }
   })

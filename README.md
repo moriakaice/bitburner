@@ -22,7 +22,8 @@ export async function main(ns) {
   }
 
   await ns.wget(
-    "https://raw.githubusercontent.com/moriakaice/bitburner/master/src/initHacking.ns"
+    "https://raw.githubusercontent.com/moriakaice/bitburner/master/src/initHacking.ns",
+    "initHacking.ns"
   );
   ns.spawn("initHacking.ns", 1);
 }

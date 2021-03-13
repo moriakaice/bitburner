@@ -260,16 +260,17 @@ export async function main(ns) {
     } else {
       if (hackCycles > serverExtraData[bestTarget].fullHackCycles) {
         hackCycles = serverExtraData[bestTarget].fullHackCycles
-        growCycles = Math.floor((hackCycles * 1.7) / 1.75)
+        growCycles = Math.max(0, growCycles - Math.ceil((hackCycles * 1.7) / 1.75))
 
-        weakenCycles = weakenCyclesForGrow(growCycles)
+        weakenCycles = weakenCyclesForGrow(growCycles) + weakenCyclesForHack(hackCycles)
         growCycles -= weakenCycles
+
+        growCycles = Math.max(0, growCycles)
       } else {
         growCycles = 0
+        weakenCycles = weakenCyclesForHack(hackCycles)
+        hackCycles -= weakenCycles
       }
-
-      weakenCycles = weakenCyclesForHack(hackCycles)
-      hackCycles -= weakenCycles
 
       ns.tprint(`[${localeHHMMSS()}] Cycles ratio: ${hackCycles} hack cycles; ${growCycles} grow cycles; ${weakenCycles} weaken cycles`)
 

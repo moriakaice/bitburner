@@ -57,5 +57,8 @@ export async function main(ns) {
   if (scriptToRunAfter) {
     ns.tprint(`[${localeHHMMSS()}] Spawning ${scriptToRunAfter}`)
     ns.spawn(scriptToRunAfter, 1)
+  } else {
+    ns.tprint(`[${localeHHMMSS()}] Spawning runHacking.ns`)
+    ns.spawn('runHacking.ns', 1)
   }
 }

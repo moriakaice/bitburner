@@ -86,7 +86,7 @@ function weakenCyclesForHack(hackCycles) {
 function getHackableServers(ns, servers) {
   const playerDetails = getPlayerDetails(ns)
 
-  return Object.keys(servers)
+  const hackableServers = Object.keys(servers)
     .filter((hostname) => ns.serverExists(hostname))
     .filter((hostname) => servers[hostname].ports <= playerDetails.portHacks || ns.hasRootAccess(hostname))
     .map((hostname) => {
@@ -106,6 +106,10 @@ function getHackableServers(ns, servers) {
       return hostname
     })
     .filter((hostname) => servers[hostname].ram >= 2)
+
+  hackableServers.sort((a, b) => servers[a].ram - servers[b].ram)
+
+  return hackableServers
 }
 
 function findTargetServer(ns, serversList, servers, serverExtraData) {

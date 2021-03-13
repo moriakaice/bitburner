@@ -154,6 +154,7 @@ export async function main(ns) {
     }
 
     if (!serverMap || serverMap.lastUpdate < new Date().getTime() - settings.mapRefreshInterval) {
+      ns.tprint(`[${localeHHMMSS()}] Spawning spider.ns`)
       ns.spawn('spider.ns', 1, 'mainHack.ns')
       ns.exit()
       return

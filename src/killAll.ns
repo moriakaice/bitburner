@@ -43,7 +43,7 @@ export async function main(ns) {
     await ns.scriptKill(scriptsToKill[i], 'home')
   }
 
-  const killAbleServers = Object.keys(servers)
+  const killAbleServers = Object.keys(serverMap.servers)
     .filter((hostname) => ns.serverExists(hostname))
     .filter((hostname) => hostname !== 'home')
 

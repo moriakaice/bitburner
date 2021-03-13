@@ -138,6 +138,8 @@ function findTargetServer(ns, serversList, servers, serverExtraData) {
 }
 
 export async function main(ns) {
+  ns.tprint(`[${localeHHMMSS()}] Starting mainHack.ns`)
+
   let hostname = ns.getHostname()
 
   if (hostname !== 'home') {
@@ -152,7 +154,7 @@ export async function main(ns) {
     }
 
     if (!serverMap || serverMap.lastUpdate < new Date().getTime() - settings.mapRefreshInterval) {
-      ns.spawn('spider.ns', 1)
+      ns.spawn('spider.ns', 1, 'mainHack.ns')
       ns.exit()
       return
     }

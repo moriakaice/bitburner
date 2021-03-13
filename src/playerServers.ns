@@ -63,6 +63,8 @@ function updateServer(ns, serverMap, host) {
 }
 
 export async function main(ns) {
+  ns.tprint(`[${localeHHMMSS()}] Starting playerServers.ns`)
+
   let hostname = ns.getHostname()
 
   if (hostname !== 'home') {

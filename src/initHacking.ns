@@ -1,8 +1,18 @@
 const baseUrl = 'https://raw.githubusercontent.com/moriakaice/bitburner/master/src/'
-const filesToDownload = ['common.ns', 'mainHack.ns', 'spider.ns', 'grow.ns', 'hack.ns', 'weaken.ns', 'playerServers.ns']
+const filesToDownload = ['common.ns', 'mainHack.ns', 'spider.ns', 'grow.ns', 'hack.ns', 'weaken.ns', 'playerServers.ns', 'killAll.ns', 'runHacking.ns']
 const valuesToRemove = ['BB_SERVER_MAP']
 
+function localeHHMMSS(ms = 0) {
+  if (!ms) {
+    ms = new Date().getTime()
+  }
+
+  return new Date(ms).toLocaleTimeString()
+}
+
 export async function main(ns) {
+  ns.tprint(`[${localeHHMMSS()}] Starting initHacking.ns`)
+
   let hostname = ns.getHostname()
 
   if (hostname !== 'home') {
@@ -13,20 +23,14 @@ export async function main(ns) {
     const filename = filesToDownload[i]
     const path = baseUrl + filename
     await ns.scriptKill(filename, 'home')
-    ns.rm(filename)
+    await ns.rm(filename)
     await ns.sleep(200)
-    ns.print(`Trying to download ${path}`)
+    ns.tprint(`[${localeHHMMSS()}] Trying to download ${path}`)
     await ns.wget(path, filename)
   }
 
   valuesToRemove.map((value) => localStorage.removeItem(value))
-  const homeRam = ns.getServerRam('home').shift()
 
-  if (homeRam >= 32) {
-    await ns.run('spider.ns')
-    await ns.sleep(3000)
-    ns.spawn('playerServers.ns', 1)
-  } else {
-    ns.spawn('spider.ns', 1)
-  }
+  ns.tprint(`[${localeHHMMSS()}] Spawning killAll.ns`)
+  ns.spawn('killAll.ns', 1, 'runHacking.ns')
 }

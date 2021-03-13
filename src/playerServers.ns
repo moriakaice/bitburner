@@ -103,6 +103,7 @@ export async function main(ns) {
       let targetRam = biggestCurrentServer
 
       if (smallestCurrentServer === settings.maxGbRam) {
+        ns.tprint(`[${localeHHMMSS()}] All servers maxxed. Exiting.`)
         ns.exit()
         return
       }

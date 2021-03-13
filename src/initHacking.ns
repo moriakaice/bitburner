@@ -1,5 +1,6 @@
 const baseUrl = 'https://raw.githubusercontent.com/moriakaice/bitburner/master/src/'
 const filesToDownload = ['common.ns', 'mainHack.ns', 'spider.ns', 'grow.ns', 'hack.ns', 'weaken.ns', 'playerServers.ns']
+const valuesToRemove = ['BB_SERVER_MAP']
 
 export async function main(ns) {
   let hostname = ns.getHostname()
@@ -11,12 +12,14 @@ export async function main(ns) {
   for (let i = 0; i < filesToDownload.length; i++) {
     const filename = filesToDownload[i]
     const path = baseUrl + filename
+    await ns.scriptKill(filename, 'home')
     ns.rm(filename)
-    ns.sleep(2000)
-    ns.tprint(`Trying to download ${path}`)
+    await ns.sleep(200)
+    ns.print(`Trying to download ${path}`)
     await ns.wget(path, filename)
   }
 
+  valuesToRemove.map(localStorage.removeItem)
   const homeRam = ns.getServerRam('home').shift()
 
   if (homeRam >= 32) {

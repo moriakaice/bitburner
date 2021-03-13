@@ -87,14 +87,15 @@ export async function main(ns) {
       let targetRam = Math.max(settings.minGbRam, smallestCurrentServer)
 
       if (ns.getServerMoneyAvailable('home') * settings.totalMoneyAllocation >= targetRam * settings.gbRamCost) {
-        const hostname = `pserv-${targetRam}-${createUUID()}`
+        let hostname = `pserv-${targetRam}-${createUUID()}`
+        hostname = ns.purchaseServer(hostname, targetRam)
 
-        await ns.purchaseServer(hostname, targetRam)
-        ns.tprint(`[${localeHHMMSS()}] Bought new server: ${hostname}`)
-        await ns.sleep(1000)
+        if (hostname) {
+          ns.tprint(`[${localeHHMMSS()}] Bought new server: ${hostname}`)
 
-        updateServer(ns, serverMap, hostname)
-        didChange = true
+          updateServer(ns, serverMap, hostname)
+          didChange = true
+        }
       }
     } else {
       let smallestCurrentServer = Math.max(ns.getServerRam(purchasedServers[0]).shift(), settings.minGbRam)
@@ -114,20 +115,24 @@ export async function main(ns) {
         targetRam /= 2
       }
 
+      targetRam = Math.min(targetRam, settings.maxGbRam)
+
       if (targetRam > ns.getServerRam(purchasedServers[0]).shift()) {
         if (ns.getServerMoneyAvailable('home') * settings.totalMoneyAllocation >= targetRam * settings.gbRamCost) {
-          const hostname = `pserv-${targetRam}-${createUUID()}`
+          let hostname = `pserv-${targetRam}-${createUUID()}`
 
           await ns.killall(purchasedServers[0])
           await ns.sleep(5000)
           await ns.deleteServer(purchasedServers[0])
           await ns.sleep(1000)
-          await ns.purchaseServer(hostname, targetRam)
-          ns.tprint(`[${localeHHMMSS()}] Upgraded: ${purchasedServers[0]} into server: ${hostname}`)
-          await ns.sleep(1000)
+          hostname = ns.purchaseServer(hostname, targetRam)
 
-          updateServer(ns, serverMap, hostname)
-          didChange = true
+          if (hostname) {
+            ns.tprint(`[${localeHHMMSS()}] Upgraded: ${purchasedServers[0]} into server: ${hostname}`)
+
+            updateServer(ns, serverMap, hostname)
+            didChange = true
+          }
         }
       }
     }

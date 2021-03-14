@@ -20,7 +20,7 @@ function localeHHMMSS(ms = 0) {
 
 function printPathToServer(servers, serverToFind) {
   if (serverToFind === 'home') return 'home'
-  if (!servers[currentServer]) return `-- Unable to locate ${serverToFind} --`
+  if (!servers[serverToFind]) return `-- Unable to locate ${serverToFind} --`
 
   const jumps = []
 

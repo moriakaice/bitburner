@@ -62,6 +62,22 @@ export async function main(ns) {
       ns.tprint(`[${localeHHMMSS()}] Unable to find the path to ${serverToFind}`)
     }
   } else {
+    ns.tprint(`[${localeHHMMSS()}] Common servers:`)
+    ns.tprint(`* CSEC (CyberSec faction)`)
+    ns.tprint(printPathToServer(serverMap.servers, 'CSEC'))
+    ns.tprint('')
+    ns.tprint(`* avmnite-02h (NiteSec faction)`)
+    ns.tprint(printPathToServer(serverMap.servers, 'avmnite-02h'))
+    ns.tprint('')
+    ns.tprint(`* I.I.I.I (The Black Hand faction)`)
+    ns.tprint(printPathToServer(serverMap.servers, 'I.I.I.I'))
+    ns.tprint('')
+    ns.tprint(`* run4theh111z (Bitrunners faction)`)
+    ns.tprint(printPathToServer(serverMap.servers, 'run4theh111z'))
+    ns.tprint('')
+    ns.tprint(`* w0r1d_d43m0n`)
+    ns.tprint(printPathToServer(serverMap.servers, 'w0r1d_d43m0n'))
+    ns.tprint('')
     ns.tprint(`[${localeHHMMSS()}] Looking for servers with coding contracts:`)
     Object.keys(serverMap.servers).forEach((hostname) => {
       if (serverMap.servers[hostname].files && serverMap.servers[hostname].files.length) {

@@ -1,5 +1,16 @@
 const baseUrl = 'https://raw.githubusercontent.com/moriakaice/bitburner/master/src/'
-const filesToDownload = ['common.ns', 'mainHack.ns', 'spider.ns', 'grow.ns', 'hack.ns', 'weaken.ns', 'playerServers.ns', 'killAll.ns', 'runHacking.ns']
+const filesToDownload = [
+  'common.ns',
+  'mainHack.ns',
+  'spider.ns',
+  'grow.ns',
+  'hack.ns',
+  'weaken.ns',
+  'playerServers.ns',
+  'killAll.ns',
+  'runHacking.ns',
+  'find.ns',
+]
 const valuesToRemove = ['BB_SERVER_MAP']
 
 function localeHHMMSS(ms = 0) {

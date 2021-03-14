@@ -51,6 +51,9 @@ function updateServer(ns, serverMap, host) {
     minSecurityLevel: ns.getServerMinSecurityLevel(host),
     baseSecurityLevel: ns.getServerBaseSecurityLevel(host),
     ram: ns.getServerRam(host)[0],
+    connections: ['home'],
+    parent: 'home',
+    children: [],
   }
 
   Object.keys(serverMap.servers).map((hostname) => {

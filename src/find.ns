@@ -1,0 +1,77 @@
+const settings = {
+  keys: {
+    serverMap: 'BB_SERVER_MAP',
+  },
+}
+
+function getItem(key) {
+  let item = localStorage.getItem(key)
+
+  return item ? JSON.parse(item) : undefined
+}
+
+function localeHHMMSS(ms = 0) {
+  if (!ms) {
+    ms = new Date().getTime()
+  }
+
+  return new Date(ms).toLocaleTimeString()
+}
+
+function printPathToServer(servers, serverToFind) {
+  if (serverToFind === 'home') return 'home'
+
+  const jumps = []
+
+  let isParentHome = servers.parent === 'home'
+  let currentServer = serverToFind
+
+  while (!isParentHome) {
+    if (servers[currentServer].parent !== 'home') {
+      jumps.push(servers[currentServer].parent)
+      currentServer = servers[currentServer].parent
+    } else {
+      isParentHome = true
+    }
+  }
+
+  jumps.unshift(serverToFind)
+
+  return jumps.reverse().join('; connect ')
+}
+
+export async function main(ns) {
+  ns.tprint(`[${localeHHMMSS()}] Starting find.ns`)
+
+  const serverToFind = ns.args[0]
+
+  let hostname = ns.getHostname()
+
+  if (hostname !== 'home') {
+    throw new Exception('Run the script from home')
+  }
+
+  const serverMap = getItem(settings.keys.serverMap)
+
+  if (serverToFind) {
+    if (Object.keys(serverMap.servers).includes(serverToFind)) {
+      ns.tprint(`[${localeHHMMSS()}] Path to ${serverToFind} found:`)
+      ns.tprint(printPathToServer(serverMap.servers, serverToFind))
+    } else {
+      ns.tprint(`[${localeHHMMSS()}] Unable to find the path to ${serverToFind}`)
+    }
+  } else {
+    ns.tprint(`[${localeHHMMSS()}] Looking for servers with coding contracts:`)
+    Object.keys(serverMap.servers).forEach((hostname) => {
+      if (serverMap.servers[hostname].files && serverMap.servers[hostname].files.length) {
+        const hasContracts = !!serverMap.servers[hostname].files.find((file) => file.includes('.cct'))
+
+        if (hasContracts) {
+          ns.tprint('')
+          ns.tprint(`* ${hostname} has a coding contract(s)! Connect using:`)
+          ns.tprint(printPathToServer(serverMap.servers, hostname))
+        }
+      }
+    })
+  }
+}

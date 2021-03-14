@@ -79,8 +79,10 @@ export async function main(ns) {
 
     let hasAllParents = false
     let hasAllChildren = false
+    let runCounts = 0
 
-    while (!hasAllParents || !hasAllChildren) {
+    while ((!hasAllParents || !hasAllChildren) && runCounts < 20) {
+      runCounts += 1
       ns.clearLog()
       hasAllParents = hasAllChildren = true
 

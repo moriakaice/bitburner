@@ -74,9 +74,10 @@ export async function main(ns) {
       }
     }
 
-    ns.scan(host)
-      .filter((hostname) => !serverMap.servers[hostname])
-      .forEach((hostname) => scanArray.push(hostname))
+    const connections = ns.scan(host)
+    serverMap.servers[host].connections = connections
+
+    connections.filter((hostname) => !serverMap.servers[hostname]).forEach((hostname) => scanArray.push(hostname))
   }
 
   setItem(settings().keys.serverMap, serverMap)

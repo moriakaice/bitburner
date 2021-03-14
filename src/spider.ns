@@ -77,26 +77,38 @@ export async function main(ns) {
     const connections = ns.scan(host) || ['home']
     serverMap.servers[host].connections = connections
 
-    let hasAllParents = false
-    let runCounts = 0
+    connections.filter((hostname) => !serverMap.servers[hostname]).forEach((hostname) => scanArray.push(hostname))
+  }
 
-    while (!hasAllParents && runCounts < 20) {
-      runCounts += 1
-      ns.clearLog()
-      hasAllParents = true
+  let hasAllParents = false
 
-      Object.keys(serverMap.servers).forEach((hostname) => {
-        const server = serverMap.servers[hostname]
+  while (!hasAllParents) {
+    hasAllParents = true
 
-        if (!server.parent) hasAllParents = false
+    Object.keys(serverMap.servers).forEach((hostname) => {
+      const server = serverMap.servers[hostname]
 
-        if (hostname === 'home') {
-          server.parent = 'home'
-          server.children = server.children ? server.children : []
+      if (!server.parent) hasAllParents = false
+
+      if (hostname === 'home') {
+        server.parent = 'home'
+        server.children = server.children ? server.children : []
+      }
+
+      if (hostname.includes('pserv-')) {
+        server.parent = 'home'
+        server.children = []
+
+        if (serverMap.servers[server.parent].children) {
+          serverMap.servers[server.parent].children.push(hostname)
+        } else {
+          serverMap.servers[server.parent].children = [hostname]
         }
+      }
 
-        if (hostname.includes('pserv-')) {
-          server.parent = 'home'
+      if (!server.parent) {
+        if (server.connections.length === 1) {
+          server.parent = server.connections[0]
           server.children = []
 
           if (serverMap.servers[server.parent].children) {
@@ -104,48 +116,27 @@ export async function main(ns) {
           } else {
             serverMap.servers[server.parent].children = [hostname]
           }
-        }
-
-        if (!server.parent) {
-          if (server.connections.length === 1) {
-            server.parent = server.connections[0]
+        } else {
+          if (!server.children) {
             server.children = []
+          }
 
-            if (serverMap.servers[server.parent].children) {
-              serverMap.servers[server.parent].children.push(hostname)
-            } else {
-              serverMap.servers[server.parent].children = [hostname]
-            }
-          } else {
-            if (!server.children) {
-              server.children = []
-            }
+          if (server.children.length) {
+            const parent = server.connections.filter((hostname) => !server.children.includes(hostname))
 
-            if (server.children.length) {
-              const parent = server.connections.filter((hostname) => !server.children.includes(hostname))
+            if (parent.length === 1) {
+              server.parent = parent.shift()
 
-              if (parent.length === 1) {
-                server.parent = parent.shift()
-
-                if (serverMap.servers[server.parent].children) {
-                  serverMap.servers[server.parent].children.push(hostname)
-                } else {
-                  serverMap.servers[server.parent].children = [hostname]
-                }
+              if (serverMap.servers[server.parent].children) {
+                serverMap.servers[server.parent].children.push(hostname)
               } else {
-                ns.print(`Server ${hostname} has unmatched parent/connections: ${JSON.stringify(parent)}`)
+                serverMap.servers[server.parent].children = [hostname]
               }
-            } else {
-              ns.print(`Server ${hostname} does not have children. Connections: ${JSON.stringify(server.connections)}`)
             }
           }
         }
-      })
-
-      await ns.sleep(1)
-    }
-
-    connections.filter((hostname) => !serverMap.servers[hostname]).forEach((hostname) => scanArray.push(hostname))
+      }
+    })
   }
 
   setItem(settings().keys.serverMap, serverMap)

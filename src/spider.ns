@@ -74,7 +74,7 @@ export async function main(ns) {
       }
     }
 
-    const connections = ns.scan(host)
+    const connections = ns.scan(host) || ['home']
     serverMap.servers[host].connections = connections
 
     let hasAllParents = false
@@ -91,6 +91,7 @@ export async function main(ns) {
 
         if (hostname === 'home') {
           server.parent = 'home'
+          server.children = server.children ? server.children : []
         }
 
         if (hostname.includes('pserv-')) {
@@ -126,6 +127,8 @@ export async function main(ns) {
                 } else {
                   serverMap.servers[server.parent].children = [hostname]
                 }
+              } else {
+                ns.print(`Server ${hostname} has unmatched parent/connections: ${JSON.stringify(parent)}`)
               }
             }
           }

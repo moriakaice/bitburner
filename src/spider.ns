@@ -78,19 +78,17 @@ export async function main(ns) {
     serverMap.servers[host].connections = connections
 
     let hasAllParents = false
-    let hasAllChildren = false
     let runCounts = 0
 
-    while ((!hasAllParents || !hasAllChildren) && runCounts < 20) {
+    while (!hasAllParents && runCounts < 20) {
       runCounts += 1
       ns.clearLog()
-      hasAllParents = hasAllChildren = true
+      hasAllParents = true
 
       Object.keys(serverMap.servers).forEach((hostname) => {
         const server = serverMap.servers[hostname]
 
         if (!server.parent) hasAllParents = false
-        if (!server.children) hasAllChildren = false
 
         if (hostname === 'home') {
           server.parent = 'home'
@@ -119,7 +117,11 @@ export async function main(ns) {
               serverMap.servers[server.parent].children = [hostname]
             }
           } else {
-            if (server.children) {
+            if (!server.children) {
+              server.children = []
+            }
+
+            if (server.children.length) {
               const parent = server.connections.filter((hostname) => !server.children.includes(hostname))
 
               if (parent.length === 1) {
@@ -133,6 +135,8 @@ export async function main(ns) {
               } else {
                 ns.print(`Server ${hostname} has unmatched parent/connections: ${JSON.stringify(parent)}`)
               }
+            } else {
+              ns.print(`Server ${hostname} does not have children. Connections: ${JSON.stringify(server.connections)}`)
             }
           }
         }

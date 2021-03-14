@@ -27,8 +27,9 @@ function printPathToServer(servers, serverToFind) {
   let currentServer = serverToFind
 
   while (!isParentHome) {
+    jumps.push(servers[currentServer].parent)
+
     if (servers[currentServer].parent !== 'home') {
-      jumps.push(servers[currentServer].parent)
       currentServer = servers[currentServer].parent
     } else {
       isParentHome = true

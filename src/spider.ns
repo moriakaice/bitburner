@@ -77,6 +77,62 @@ export async function main(ns) {
     const connections = ns.scan(host)
     serverMap.servers[host].connections = connections
 
+    let hasAllParents = false
+    let hasAllChildren = false
+
+    while (!hasAllParents || !hasAllChildren) {
+      hasAllParents = hasAllChildren = true
+
+      Object.keys(serverMap.servers).forEach((hostname) => {
+        const server = serverMap.servers[hostname]
+
+        if (!server.parent) hasAllParents = false
+        if (!server.children) hasAllChildren = false
+
+        if (hostname === 'home') {
+          server.parent = 'home'
+        }
+
+        if (hostname.includes('pserv-')) {
+          server.parent = 'home'
+          server.children = []
+
+          if (serverMap.servers[server.parent].children) {
+            serverMap.servers[server.parent].children.push(hostname)
+          } else {
+            serverMap.servers[server.parent].children = [hostname]
+          }
+        }
+
+        if (!server.parent) {
+          if (server.connections.length === 1) {
+            server.parent = server.connections[0]
+            server.children = []
+
+            if (serverMap.servers[server.parent].children) {
+              serverMap.servers[server.parent].children.push(hostname)
+            } else {
+              serverMap.servers[server.parent].children = [hostname]
+            }
+          } else {
+            if (server.children) {
+              const parent = server.connections.filter((hostname) => !server.children.includes(hostname))
+
+              if (parent.length === 1) {
+                server.parent = parent.shift()
+
+                if (serverMap.servers[server.parent].children) {
+                  serverMap.servers[server.parent].children.push(hostname)
+                } else {
+                  serverMap.servers[server.parent].children = [hostname]
+                }
+              }
+            }
+          }
+        }
+      })
+    }
+
     connections.filter((hostname) => !serverMap.servers[hostname]).forEach((hostname) => scanArray.push(hostname))
   }
 

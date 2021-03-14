@@ -59,6 +59,7 @@ export async function main(ns) {
       minSecurityLevel: ns.getServerMinSecurityLevel(host),
       baseSecurityLevel: ns.getServerBaseSecurityLevel(host),
       ram: ns.getServerRam(host)[0],
+      files: ns.ls(host),
     }
 
     const playerDetails = getPlayerDetails(ns)

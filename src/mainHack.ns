@@ -209,7 +209,7 @@ export async function main(ns) {
     ns.tprint(
       `[${localeHHMMSS()}] Time to: hack: ${convertMSToHHMMSS(hackTime)}; grow: ${convertMSToHHMMSS(growTime)}; weaken: ${convertMSToHHMMSS(weakenTime)}`
     )
-    ns.tprint(`[${localeHHMMSS()}] Delays: ${Math.ceil(hackDelay / 100) / 10} s for hacks, ${Math.ceil(growDelay / 100) / 10} for grows`)
+    ns.tprint(`[${localeHHMMSS()}] Delays: ${convertMSToHHMMSS(hackDelay)} for hacks, ${convertMSToHHMMSS(growDelay)} for grows`)
 
     if (action === 'weaken') {
       if (settings.changes.weaken * weakenCycles > securityLevel - serverMap.servers[bestTarget].minSecurityLevel) {

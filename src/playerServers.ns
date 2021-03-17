@@ -65,6 +65,24 @@ function updateServer(ns, serverMap, host) {
   setItem(settings.keys.serverMap, serverMap)
 }
 
+function getPurchasedServers(ns) {
+  let purchasedServers = ns.getPurchasedServers()
+  if (purchasedServers.length) {
+    purchasedServers.sort((a, b) => {
+      const totalRamA = ns.getServerRam(a).shift()
+      const totalRamB = ns.getServerRam(b).shift()
+
+      if (totalRamA === totalRamB) {
+        return ns.getServerRam(a).shift() - ns.getServerRam(b).shift()
+      } else {
+        return totalRamA - totalRamB
+      }
+    })
+  }
+
+  return purchasedServers
+}
+
 export async function main(ns) {
   ns.tprint(`[${localeHHMMSS()}] Starting playerServers.ns`)
 
@@ -78,19 +96,7 @@ export async function main(ns) {
     let didChange = false
 
     const serverMap = getItem(settings.keys.serverMap)
-    let purchasedServers = ns.getPurchasedServers()
-    if (purchasedServers.length) {
-      purchasedServers.sort((a, b) => {
-        const totalRamA = ns.getServerRam(a).shift()
-        const totalRamB = ns.getServerRam(b).shift()
-
-        if (totalRamA === totalRamB) {
-          return ns.getServerRam(a).shift() - ns.getServerRam(b).shift()
-        } else {
-          return totalRamA - totalRamB
-        }
-      })
-    }
+    let purchasedServers = getPurchasedServers(ns)
 
     let action = purchasedServers.length < settings.maxPlayerServers ? settings.actions.BUY : settings.actions.UPGRADE
 
@@ -140,21 +146,27 @@ export async function main(ns) {
 
       targetRam = Math.min(targetRam, settings.maxGbRam)
 
-      if (targetRam > ns.getServerRam(purchasedServers[0]).shift()) {
-        if (ns.getServerMoneyAvailable('home') * settings.totalMoneyAllocation >= targetRam * settings.gbRamCost) {
-          let hostname = `pserv-${targetRam}-${createUUID()}`
+      didChange = true
+      while (didChange) {
+        didChange = false
+        purchasedServers = getPurchasedServers(ns)
 
-          await ns.killall(purchasedServers[0])
-          await ns.sleep(100)
-          const serverDeleted = await ns.deleteServer(purchasedServers[0])
-          if (serverDeleted) {
-            hostname = ns.purchaseServer(hostname, targetRam)
+        if (targetRam > ns.getServerRam(purchasedServers[0]).shift()) {
+          if (ns.getServerMoneyAvailable('home') * settings.totalMoneyAllocation >= targetRam * settings.gbRamCost) {
+            let hostname = `pserv-${targetRam}-${createUUID()}`
 
-            if (hostname) {
-              ns.tprint(`[${localeHHMMSS()}] Upgraded: ${purchasedServers[0]} into server: ${hostname}`)
+            await ns.killall(purchasedServers[0])
+            await ns.sleep(10)
+            const serverDeleted = await ns.deleteServer(purchasedServers[0])
+            if (serverDeleted) {
+              hostname = await ns.purchaseServer(hostname, targetRam)
 
-              updateServer(ns, serverMap, hostname)
-              didChange = true
+              if (hostname) {
+                ns.tprint(`[${localeHHMMSS()}] Upgraded: ${purchasedServers[0]} into server: ${hostname}`)
+
+                updateServer(ns, serverMap, hostname)
+                didChange = true
+              }
             }
           }
         }

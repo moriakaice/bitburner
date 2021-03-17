@@ -81,8 +81,9 @@ export async function main(ns) {
     ns.tprint('')
     ns.tprint(`[${localeHHMMSS()}] Looking for servers with coding contracts:`)
     Object.keys(serverMap.servers).forEach((hostname) => {
-      if (serverMap.servers[hostname].files && serverMap.servers[hostname].files.length) {
-        const hasContracts = !!serverMap.servers[hostname].files.find((file) => file.includes('.cct'))
+      const files = ns.ls(hostname)
+      if (files && files.length) {
+        const hasContracts = !!files.find((file) => file.includes('.cct'))
 
         if (hasContracts) {
           ns.tprint('')

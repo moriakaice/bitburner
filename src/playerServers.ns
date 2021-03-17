@@ -145,7 +145,7 @@ export async function main(ns) {
           let hostname = `pserv-${targetRam}-${createUUID()}`
 
           await ns.killall(purchasedServers[0])
-          await ns.sleep(1000)
+          await ns.sleep(100)
           const serverDeleted = await ns.deleteServer(purchasedServers[0])
           if (serverDeleted) {
             hostname = ns.purchaseServer(hostname, targetRam)

@@ -162,7 +162,7 @@ export async function main(ns) {
     }
 
     if (!didChange) {
-      await ns.sleep(10000)
+      await ns.sleep(1000)
     }
   }
 }

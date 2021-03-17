@@ -5,7 +5,7 @@ const settings = {
   homeRamBigMode: 64,
   minSecurityLevelOffset: 1,
   maxMoneyMultiplayer: 0.9,
-  minSecurityWeight: 100,
+  minSecurityWeight: 50,
   mapRefreshInterval: 24 * 60 * 60 * 1000,
   keys: {
     serverMap: 'BB_SERVER_MAP',
@@ -129,10 +129,17 @@ function findTargetServer(ns, serversList, servers, serverExtraData) {
 
     const serverValue = servers[hostname].maxMoney * (settings.minSecurityWeight / (servers[hostname].minSecurityLevel + ns.getServerSecurityLevel(hostname)))
 
-    return { hostname, serverValue }
+    return {
+      hostname,
+      serverValue,
+      minSecurityLevel: servers[hostname].minSecurityLevel,
+      securityLevel: ns.getServerSecurityLevel(hostname),
+      maxMoney: servers[hostname].maxMoney,
+    }
   })
 
   weightedServers.sort((a, b) => b.serverValue - a.serverValue)
+  ns.print(JSON.stringify(weightedServers, null, 2))
 
   return weightedServers.map((server) => server.hostname)
 }

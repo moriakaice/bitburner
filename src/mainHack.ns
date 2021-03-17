@@ -169,6 +169,9 @@ export async function main(ns) {
     const growTime = ns.getGrowTime(bestTarget) * 1000
     const weakenTime = ns.getWeakenTime(bestTarget) * 1000
 
+    const growDelay = Math.max(0, weakenTime - growTime - 5 * 1000)
+    const hackDelay = Math.max(0, growTime + growDelay - hackTime - 5 * 1000)
+
     const securityLevel = ns.getServerSecurityLevel(bestTarget)
     const money = ns.getServerMoneyAvailable(bestTarget)
 
@@ -206,6 +209,7 @@ export async function main(ns) {
     ns.tprint(
       `[${localeHHMMSS()}] Time to: hack: ${convertMSToHHMMSS(hackTime)}; grow: ${convertMSToHHMMSS(growTime)}; weaken: ${convertMSToHHMMSS(weakenTime)}`
     )
+    ns.tprint(`[${localeHHMMSS()}] Delays: ${Math.ceil(hackDelay / 100) / 10} s for hacks, ${Math.ceil(growDelay / 100) / 10} for grows`)
 
     if (action === 'weaken') {
       if (settings.changes.weaken * weakenCycles > securityLevel - serverMap.servers[bestTarget].minSecurityLevel) {
@@ -232,7 +236,7 @@ export async function main(ns) {
         const cyclesToRun = Math.max(0, Math.min(cyclesFittable, growCycles))
 
         if (growCycles) {
-          await ns.exec('grow.ns', server.host, cyclesToRun, bestTarget, cyclesToRun, 0, createUUID())
+          await ns.exec('grow.ns', server.host, cyclesToRun, bestTarget, cyclesToRun, growDelay, createUUID())
           growCycles -= cyclesToRun
           cyclesFittable -= cyclesToRun
         }
@@ -254,7 +258,7 @@ export async function main(ns) {
         const cyclesToRun = Math.max(0, Math.min(cyclesFittable, growCycles))
 
         if (growCycles) {
-          await ns.exec('grow.ns', server.host, cyclesToRun, bestTarget, cyclesToRun, 0, createUUID())
+          await ns.exec('grow.ns', server.host, cyclesToRun, bestTarget, cyclesToRun, growDelay, createUUID())
           growCycles -= cyclesToRun
           cyclesFittable -= cyclesToRun
         }
@@ -287,7 +291,7 @@ export async function main(ns) {
         const cyclesToRun = Math.max(0, Math.min(cyclesFittable, hackCycles))
 
         if (hackCycles) {
-          await ns.exec('hack.ns', server.host, cyclesToRun, bestTarget, cyclesToRun, 0, createUUID())
+          await ns.exec('hack.ns', server.host, cyclesToRun, bestTarget, cyclesToRun, hackDelay, createUUID())
           hackCycles -= cyclesToRun
           cyclesFittable -= cyclesToRun
         }
@@ -298,7 +302,7 @@ export async function main(ns) {
         if (cyclesFittable && growCycles) {
           const growCyclesToRun = Math.min(growCycles, cyclesFittable)
 
-          await ns.exec('grow.ns', server.host, growCyclesToRun, bestTarget, growCyclesToRun, 0, createUUID())
+          await ns.exec('grow.ns', server.host, growCyclesToRun, bestTarget, growCyclesToRun, growDelay, createUUID())
           growCycles -= growCyclesToRun
           cyclesFittable -= growCyclesToRun
         }

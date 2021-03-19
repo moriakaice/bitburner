@@ -124,7 +124,7 @@ function findTargetServer(ns, serversList, servers, serverExtraData) {
     .filter((hostname) => servers[hostname].hackingLevel <= playerDetails.hackingLevel)
     .filter((hostname) => servers[hostname].maxMoney)
     .filter((hostname) => hostname !== 'home')
-    .filter((hostname) => ns.getWeakenTime(hostname < settings.maxWeakenTime))
+    .filter((hostname) => ns.getWeakenTime(hostname) < settings.maxWeakenTime)
 
   let weightedServers = serversList.map((hostname) => {
     const fullHackCycles = Math.ceil(100 / Math.max(0.00000001, ns.hackAnalyzePercent(hostname)))

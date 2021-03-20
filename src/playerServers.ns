@@ -86,6 +86,7 @@ function getPurchasedServers(ns) {
 export async function main(ns) {
   ns.tprint(`[${localeHHMMSS()}] Starting playerServers.ns`)
 
+  settings.maxGbRam = ns.getPurchasedServerMaxRam()
   let hostname = ns.getHostname()
 
   if (hostname !== 'home') {
@@ -113,13 +114,14 @@ export async function main(ns) {
       }
 
       targetRam = Math.max(settings.minGbRam, targetRam)
+      targetRam = Math.min(targetRam, settings.maxGbRam)
 
       if (ns.getServerMoneyAvailable('home') * settings.totalMoneyAllocation >= targetRam * settings.gbRamCost) {
         let hostname = `pserv-${targetRam}-${createUUID()}`
         hostname = ns.purchaseServer(hostname, targetRam)
 
         if (hostname) {
-          ns.tprint(`[${localeHHMMSS()}] Bought new server: ${hostname}`)
+          ns.tprint(`[${localeHHMMSS()}] Bought new server: ${hostname} (${targetRam} GB)`)
 
           updateServer(ns, serverMap, hostname)
           didChange = true
@@ -162,7 +164,7 @@ export async function main(ns) {
               hostname = await ns.purchaseServer(hostname, targetRam)
 
               if (hostname) {
-                ns.tprint(`[${localeHHMMSS()}] Upgraded: ${purchasedServers[0]} into server: ${hostname}`)
+                ns.tprint(`[${localeHHMMSS()}] Upgraded: ${purchasedServers[0]} into server: ${hostname} (${targetRam} GB)`)
 
                 updateServer(ns, serverMap, hostname)
                 didChange = true

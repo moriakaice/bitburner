@@ -127,7 +127,7 @@
 
     deltaHolder.innerHTML = `
     Player attack delta: ${Math.round((playerStats[0] - lastValues.player[0]) * 100 * timeAdjustment) / 100}/s<br />
-    Enemy defence delta: ${Math.round((enemyStats[1] - lastValues.enemy[1]) * 100 * timeAdjustment) / 100}/s
+    Enemy defense delta: ${Math.round((enemyStats[1] - lastValues.enemy[1]) * 100 * timeAdjustment) / 100}/s
     `
 
     lastValues.player = playerStats

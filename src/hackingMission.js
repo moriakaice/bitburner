@@ -10,6 +10,7 @@
   let lastValues = {
     player: [],
     enemy: [],
+    readTime: 0,
   }
 
   function getItem(key) {
@@ -61,6 +62,11 @@
       await startGame(ns)
 
       try {
+        lastValues = {
+          player: [],
+          enemy: [],
+          readTime: 0,
+        }
         calculateDeltaStats()
         await completeMission(ns, grid, nodes, lookup, buttons)
       } catch (e) {
@@ -102,6 +108,11 @@
       lastValues.enemy = enemyStats
     }
 
+    const readTime = new Date().getTime()
+    if (!lastValues.readTime) {
+      lastValues.readTime = readTime
+    }
+
     let deltaHolder = document.querySelector('#delta-holder')
     if (!deltaHolder) {
       const deltaHolderElement = document.createElement('p')
@@ -112,13 +123,16 @@
       deltaHolder = document.querySelector('#delta-holder')
     }
 
+    const timeAdjustment = 1000 / Math.max(1, readTime - lastValues.readTime)
+
     deltaHolder.innerHTML = `
-    Player attack delta: ${Math.round((playerStats[0] - lastValues.player[0]) * 100) / 100}/s<br />
-    Enemy defence delta: ${Math.round((enemyStats[1] - lastValues.enemy[1]) * 100) / 100}/s
+    Player attack delta: ${Math.round((playerStats[0] - lastValues.player[0]) * 100 * timeAdjustment) / 100}/s<br />
+    Enemy defence delta: ${Math.round((enemyStats[1] - lastValues.enemy[1]) * 100 * timeAdjustment) / 100}/s
     `
 
     lastValues.player = playerStats
     lastValues.enemy = enemyStats
+    lastValues.readTime = readTime
 
     setTimeout(calculateDeltaStats, 1000)
   }

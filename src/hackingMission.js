@@ -256,7 +256,7 @@
         if (plan.length === 0) plan = createPlan(home, lookup, myAttack, cpus.length, [types.Transfer, types.Spam])
         if (plan.length === 0) plan = createPlan(home, lookup, myAttack, cpus.length, [types.CPU, types.Spam])
         if (plan.length === 0) plan = createPlan(home, lookup, myAttack, cpus.length, [types.Spam])
-        if (plan.length === 0) plan = createPlan(home, lookup, myAttack, cpus.length, [types.CPU, types.Firewall])
+        if (plan.length === 0) plan = createPlan(home, lookup, myAttack, cpus.length, [types.CPU])
 
         if (plan.length > 0) {
           console.log(plan.map((p) => p.id))

@@ -87,6 +87,7 @@ export async function main(ns) {
   ns.tprint(`[${localeHHMMSS()}] Starting playerServers.ns`)
 
   settings.maxGbRam = ns.getPurchasedServerMaxRam()
+  settings.maxPlayerServers = ns.getPurchasedServerLimit()
   let hostname = ns.getHostname()
 
   if (hostname !== 'home') {

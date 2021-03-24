@@ -11,6 +11,7 @@
     player: [],
     enemy: [],
     readTime: 0,
+    timeoutInstance: undefined,
   }
 
   function getItem(key) {
@@ -62,13 +63,23 @@
       await startGame(ns)
 
       try {
+        if (lastValues.timeoutInstance) {
+          clearTimeout(lastValues.timeoutInstance)
+        }
+
         lastValues = {
           player: [],
           enemy: [],
           readTime: 0,
+          timeoutInstance: undefined,
         }
         calculateDeltaStats()
+
         await completeMission(ns, grid, nodes, lookup, buttons)
+
+        if (lastValues.timeoutInstance) {
+          clearTimeout(lastValues.timeoutInstance)
+        }
       } catch (e) {
         console.error(e)
       }
@@ -93,7 +104,7 @@
     const playerStats = document
       .querySelector('#hacking-mission-player-stats')
       .innerText.split('\n')
-      .map((line) => parseFloat(line.trim().split(' ').pop().replace(',', '.')))
+      .map((line) => parseFloat(line.trim().split(':').pop().trim().replace(/\s+/g, '').replace(',', '.')))
 
     if (!lastValues.player.length) {
       lastValues.player = playerStats
@@ -102,7 +113,7 @@
     const enemyStats = document
       .querySelector('#hacking-mission-enemy-stats')
       .innerText.split('\n')
-      .map((line) => parseFloat(line.trim().split(' ').pop().replace(',', '.')))
+      .map((line) => parseFloat(line.trim().split(':').pop().trim().replace(/\s+/g, '').replace(',', '.')))
 
     if (!lastValues.enemy.length) {
       lastValues.enemy = enemyStats
@@ -134,7 +145,7 @@
     lastValues.enemy = enemyStats
     lastValues.readTime = readTime
 
-    setTimeout(calculateDeltaStats, 1000)
+    lastValues.timeoutInstance = setTimeout(calculateDeltaStats, 1000)
   }
 
   function getHackMissionElement(ns) {
@@ -151,7 +162,7 @@
   }
 
   function createPlan(home, lookup, myAttack, cpuCount, goalTypes) {
-    const realAttack = myAttack + myAttack * (cpuCount / 64)
+    const realAttack = myAttack // + myAttack * (cpuCount / 64)
     const seen = {}
     let queue = [
       {
@@ -161,15 +172,17 @@
       },
     ]
 
-    const enemyDefence = document
-      .getElementById('hacking-mission-enemy-stats')
-      .innerText.split('\n')
-      .map((e) => {
-        const temp = e.split(' ')
-        return Number(temp[temp.length - 1].replace(/,/g, ''))
-      })[1]
-    // If we outclass enemy by a lot, just win fast
-    let focusOnWin = false //myAttack > 5 * enemyDefence;
+    const enemyDefence =
+      lastValues.enemy[1] * 10 ||
+      document
+        .getElementById('hacking-mission-enemy-stats')
+        .innerText.split('\n')
+        .map((e) => {
+          const temp = e.split(' ')
+          return Number(temp[temp.length - 1].replace(/,/g, ''))
+        })[1]
+
+    let focusOnWin = myAttack > 5 * enemyDefence
 
     while (queue.length > 0) {
       const curr = queue.shift()
@@ -235,18 +248,15 @@
       var playerStats = document.getElementById('hacking-mission-player-stats')
       if (playerStats === null) return
 
-      const myAttack = playerStats.innerText.split('\n').map((e) => {
-        const temp = e.split(' ')
-        return Number(temp[temp.length - 1].replace(/,/g, ''))
-      })[0]
+      const myAttack =
+        lastValues.player[0] * 10 ||
+        playerStats.innerText.split('\n').map((e) => {
+          const temp = e.split(' ')
+          return Number(temp[temp.length - 1].replace(/,/g, ''))
+        })[0]
 
       var enemyStats = document.getElementById('hacking-mission-enemy-stats')
       if (enemyStats === null) return
-
-      const enemyDefence = enemyStats.innerText.split('\n').map((e) => {
-        const temp = e.split(' ')
-        return Number(temp[temp.length - 1].replace(/,/g, ''))
-      })[1]
 
       const isIdle = !cpus.some((cpu) => cpu.connection)
 
@@ -259,7 +269,7 @@
         if (plan.length === 0) plan = createPlan(home, lookup, myAttack, cpus.length, [types.CPU])
 
         if (plan.length > 0) {
-          console.log(plan.map((p) => p.id))
+          // console.log(plan.map((p) => p.id))
           plan.forEach((e) => (document.getElementById(e.id).style.backgroundColor = 'green'))
         }
       }
@@ -267,8 +277,8 @@
       if (plan.length > 0 && isIdle) {
         remainingReviewTime = REVIEW_PLAN_TIME
         const target = plan.shift()
-        console.log(target.id)
-        console.log(`Defence: ${target.def}, Enemy: ${target.isEnemy}`)
+        // console.log(target.id)
+        // console.log(`Defence: ${target.def}, Enemy: ${target.isEnemy}`)
         cpus.forEach((cpu) => {
           cpu.connect(target)
           instance.connect({ source: cpu.id, target: target.id })
@@ -278,7 +288,11 @@
           instance.connect({ source: xfer.id, target: target.id })
         })
       }
-      const minDef = 150
+
+      const playerHackingSkill = parseInt(document.querySelector('#character-hack-text').textContent.replace(/,/g, '').replace(/\s+/g, '').trim(), 10) || 1
+      const minDefSelf = ((0.95 * playerHackingSkill) / 130) * 10 + 10
+      const minDef = 10
+
       nodes
         .filter((n) => n.isMine)
         .forEach((node) => {
@@ -289,21 +303,23 @@
                 if (node.connection.isEnemy || node.connection.type !== types.Transfer)
                   if (node.connection.def > minDef) scan.click()
                   else attack.click()
-                else if (node.connection.def > myAttack * 0.6) scan.click()
+                else if (node.connection.def > myAttack * 0.75) scan.click()
                 else attack.click()
               } else {
-                if (node.def > minDef) overflow.click()
-                else fortify.click()
+                if (node.def > minDefSelf) {
+                  overflow.click()
+                  console.log(node.def, minDefSelf, minDef, playerHackingSkill)
+                } else fortify.click()
               }
               break
             case types.Transfer:
-              if (node.def > minDef) {
+              if (node.def > minDefSelf) {
                 overflow.click()
               } else {
                 if (node.connection) {
                   if (node.connection.isEnemy || node.connection.type !== types.Transfer)
                     if (node.connection.def > minDef) scan.click()
-                    else if (node.connection.def > myAttack * 0.6) scan.click()
+                    else if (node.connection.def > myAttack * 0.9) scan.click()
                     else fortify.click()
                 } else {
                   fortify.click()
@@ -317,7 +333,7 @@
               if (node.connection) {
                 if (node.connection.isEnemy || node.connection.type !== types.Transfer)
                   if (node.connection.def > minDef) scan.click()
-                  else if (node.connection.def > myAttack * 0.6) scan.click()
+                  else if (node.connection.def > myAttack * 0.8) scan.click()
                   else fortify.click()
               } else {
                 fortify.click()

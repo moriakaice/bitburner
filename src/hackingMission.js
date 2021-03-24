@@ -536,10 +536,10 @@
       // avoid firewalls more
       switch (this.type) {
         case types.Firewall:
-          this.weight *= 20.0
+          this.weight *= 50.0
           break
         case types.CPU:
-          this.weight *= 10.0
+          this.weight *= 20.0
           break
         case types.Shield:
           this.weight *= 1.0

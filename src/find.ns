@@ -65,30 +65,30 @@ export async function main(ns) {
   } else {
     ns.tprint(`[${localeHHMMSS()}] Common servers:`)
     ns.tprint(`* CSEC (CyberSec faction)`)
-    ns.tprint(printPathToServer(serverMap.servers, 'CSEC'))
+    ns.tprint(printPathToServer(serverMap.servers, 'CSEC') + '; hack;')
     ns.tprint('')
     ns.tprint(`* avmnite-02h (NiteSec faction)`)
-    ns.tprint(printPathToServer(serverMap.servers, 'avmnite-02h'))
+    ns.tprint(printPathToServer(serverMap.servers, 'avmnite-02h') + '; hack;')
     ns.tprint('')
     ns.tprint(`* I.I.I.I (The Black Hand faction)`)
-    ns.tprint(printPathToServer(serverMap.servers, 'I.I.I.I'))
+    ns.tprint(printPathToServer(serverMap.servers, 'I.I.I.I') + '; hack;')
     ns.tprint('')
     ns.tprint(`* run4theh111z (Bitrunners faction)`)
-    ns.tprint(printPathToServer(serverMap.servers, 'run4theh111z'))
+    ns.tprint(printPathToServer(serverMap.servers, 'run4theh111z') + '; hack;')
     ns.tprint('')
     ns.tprint(`* w0r1d_d43m0n`)
-    ns.tprint(printPathToServer(serverMap.servers, 'w0r1d_d43m0n'))
+    ns.tprint(printPathToServer(serverMap.servers, 'w0r1d_d43m0n') + '; hack;')
     ns.tprint('')
     ns.tprint(`[${localeHHMMSS()}] Looking for servers with coding contracts:`)
     Object.keys(serverMap.servers).forEach((hostname) => {
       const files = ns.ls(hostname)
       if (files && files.length) {
-        const hasContracts = !!files.find((file) => file.includes('.cct'))
+        const contract = files.find((file) => file.includes('.cct'))
 
-        if (hasContracts) {
+        if (!!contract) {
           ns.tprint('')
           ns.tprint(`* ${hostname} has a coding contract(s)! Connect using:`)
-          ns.tprint(printPathToServer(serverMap.servers, hostname))
+          ns.tprint(printPathToServer(serverMap.servers, hostname) + `; run ${contract};`)
         }
       }
     })

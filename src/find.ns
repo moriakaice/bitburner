@@ -92,5 +92,9 @@ export async function main(ns) {
         }
       }
     })
+    ns.tprint('')
+    ns.tprint('Buy all hacks command:')
+    ns.tprint('home; connect darkweb; buy BruteSSH.exe; buy FTPCrack.exe; buy relaySMTP.exe; buy HTTPWorm.exe; buy SQLInject.exe; home;')
+    ns.tprint('')
   }
 }

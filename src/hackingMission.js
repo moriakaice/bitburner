@@ -30,6 +30,70 @@
     localStorage.setItem(key, JSON.stringify(value))
   }
 
+  function solve(graph, s) {
+    var solutions = {}
+    solutions[s] = []
+    solutions[s].weight = 0
+
+    while (true) {
+      var parent = null
+      var nearest = null
+      var dist = Infinity
+
+      //for each existing solution
+      for (var n in solutions) {
+        if (!solutions[n]) continue
+        var ndist = solutions[n].weight
+        var adj = graph[n]
+        //for each of its adjacent nodes...
+        for (var a in adj) {
+          //without a solution already...
+          if (solutions[a]) continue
+          //choose nearest node with lowest *total* cost
+          var d = adj[a] + ndist
+          if (d < dist) {
+            //reference parent
+            parent = solutions[n]
+            nearest = a
+            dist = d
+          }
+        }
+      }
+
+      //no more solutions
+      if (dist === Infinity) {
+        break
+      }
+
+      //extend parent's solution path
+      solutions[nearest] = parent.concat(nearest)
+      //extend parent's cost
+      solutions[nearest].weight = dist
+    }
+
+    return solutions
+  }
+
+  function convertNodesToGraph(nodes) {
+    function getNode(x, y) {
+      return nodes.find((n) => n.x === x && n.y === y)
+    }
+
+    const graph = {}
+
+    nodes.forEach((n) => {
+      graph[n.id] = {}
+
+      const siblings = [getNode(n.x, n.y + 1), getNode(n.x, n.y - 1), getNode(n.x + 1, n.y), getNode(n.x - 1, n.y)].filter((n) => n)
+
+      siblings.forEach((sibling) => {
+        graph[n.id][sibling.id] = sibling.isMine ? 0 : sibling.weight
+      })
+    })
+
+    return graph
+  }
+
   let instance
 
   async function main() {
@@ -161,16 +225,12 @@
     return null
   }
 
-  function createPlan(home, lookup, myAttack, cpuCount, goalTypes) {
-    const realAttack = myAttack // + myAttack * (cpuCount / 64)
-    const seen = {}
-    let queue = [
-      {
-        from: null,
-        to: home,
-        distance: 0,
-      },
-    ]
+  function createPlan({ nodes, lookup, myAttack, goalTypes }) {
+    function canWin({ n, myAttack, enemyDefence }) {
+      return n.isEnemy ? myAttack > enemyDefence : myAttack > 100 + n.def
+    }
+
+    myAttack = lastValues.player[0] * 10 || myAttack
 
     const enemyDefence =
       lastValues.enemy[1] * 10 ||
@@ -184,46 +244,23 @@
 
     let focusOnWin = myAttack > 5 * enemyDefence
 
-    while (queue.length > 0) {
-      const curr = queue.shift()
-      if (seen[curr.to.id]) continue
-      seen[curr.to.id] = true
+    const graph = convertNodesToGraph(nodes)
+    const solutions = solve(graph, 'hacking-mission-node-0-0')
 
-      if (!curr.to.isMine) {
-        if (goalTypes.indexOf(curr.to.type) >= 0) {
-          if (focusOnWin && curr.to.type !== types.Database) continue
+    const targets = nodes
+      .filter((n) => !n.isMine)
+      .filter((n) => (focusOnWin ? n.type === types.Database : goalTypes.includes(n.type)))
+      .filter((n) => canWin({ n, myAttack, enemyDefence }))
+      .filter((n) => !solutions[n.id].find((nId) => !canWin(lookup[nId], myAttack, enemyDefence)))
 
-          const result = []
-          let at = curr
-          while (at) {
-            result.push(at.to)
-            at = at.from
-          }
-          result.reverse()
+    if (targets.length) {
+      targets.sort((a, b) => solutions[a.id].weight - solutions[b.id].weight)
+      const topTarget = targets[0]
 
-          if (!result.some((r) => 100 + r.def > realAttack) && !result.some((r) => r.isEnemy && realAttack < enemyDefence)) return result
-        }
-      }
-
-      ;[
-        lookup[`hacking-mission-node-${curr.to.y}-${curr.to.x - 1}`],
-        lookup[`hacking-mission-node-${curr.to.y}-${curr.to.x + 1}`],
-        lookup[`hacking-mission-node-${curr.to.y - 1}-${curr.to.x}`],
-        lookup[`hacking-mission-node-${curr.to.y + 1}-${curr.to.x}`],
-      ]
-        .filter((n) => n)
-        .filter((n) => !seen[n.id])
-        .forEach((n) => {
-          queue.push({
-            from: curr.to.isMine ? null : curr,
-            to: n,
-            distance: curr.distance + n.weight + (n.isEnemy ? enemyDefence : 0),
-          })
-        })
-
-      queue = queue.sort((a, b) => a.distance - b.distance)
+      return solutions[topTarget.id].filter((nId) => !lookup[nId].isMine).map((nId) => lookup[nId])
+    } else {
+      return []
     }
-    return []
   }
 
   async function completeMission(ns, grid, nodes, lookup, buttons) {
@@ -235,7 +272,7 @@
     let databases = nodes.filter((n) => n.type === types.Database)
     const home = lookup[`hacking-mission-node-${0}-${0}`]
 
-    const REVIEW_PLAN_TIME = 60000
+    const REVIEW_PLAN_TIME = 10000
     let remainingReviewTime
 
     let plan = []
@@ -261,15 +298,10 @@
       const isIdle = !cpus.some((cpu) => cpu.connection)
 
       if (plan.length === 0 && isIdle) {
-        plan = createPlan(home, lookup, myAttack, cpus.length, [types.Database, types.Transfer])
-        if (plan.length === 0) plan = createPlan(home, lookup, myAttack, cpus.length, [types.Transfer])
-        if (plan.length === 0) plan = createPlan(home, lookup, myAttack, cpus.length, [types.Transfer, types.Spam])
-        if (plan.length === 0) plan = createPlan(home, lookup, myAttack, cpus.length, [types.CPU, types.Spam])
-        if (plan.length === 0) plan = createPlan(home, lookup, myAttack, cpus.length, [types.Spam])
-        if (plan.length === 0) plan = createPlan(home, lookup, myAttack, cpus.length, [types.CPU])
+        plan = createPlan({ lookup, nodes, myAttack, goalTypes: [types.Database, types.Transfer, types.Spam] })
 
         if (plan.length > 0) {
-          // console.log(plan.map((p) => p.id))
+          console.log('plan', plan)
           plan.forEach((e) => (document.getElementById(e.id).style.backgroundColor = 'green'))
         }
       }
@@ -355,6 +387,11 @@
         remainingReviewTime -= 100
         if (remainingReviewTime <= 0) {
           ns.print('Resetting plan ...')
+          plan.forEach((e) => {
+            const color = e.isMine ? '#00f' : e.isEnemy ? '#f00' : '#808080'
+
+            document.getElementById(e.id).style.backgroundColor = color
+          })
           plan = []
         }
       }
@@ -531,25 +568,30 @@
       this.hp = Number(text[1].split(' ', 2)[1].replace(/,/g, ''))
       this.atk = Number(text[2].split(' ', 2)[1].replace(/,/g, ''))
       this.def = Number(text[3].split(' ', 2)[1].replace(/,/g, ''))
-      this.weight = this.isMine ? 0 : this.def + this.hp
+      this.weight = this.isMine ? 0 : this.isEnemy ? lastValues.enemy[1] * 10 + this.hp : this.def + this.hp
 
       // avoid firewalls more
       switch (this.type) {
         case types.Firewall:
-          this.weight *= 60.0
+          this.weight *= 10
           break
         case types.CPU:
-          this.weight *= 25.0
+          this.weight *= 5
           break
         case types.Shield:
-          this.weight *= 2.0
+          this.weight *= 1
+          break
+        case types.Spam:
+          this.weight *= 0.85
           break
         case types.Transfer:
-        case types.Spam:
           this.weight *= 0.75
           break
         case types.Database:
           this.weight *= 0.5
+          break
+        default:
+          this.weight *= 100
           break
       }
     }

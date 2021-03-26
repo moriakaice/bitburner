@@ -30,6 +30,7 @@
     localStorage.setItem(key, JSON.stringify(value))
   }
 
+  // from https://gist.github.com/jpillora/7382441
   function solve(graph, s) {
     var solutions = {}
     solutions[s] = []
@@ -251,7 +252,7 @@
       .filter((n) => !n.isMine)
       .filter((n) => (focusOnWin ? n.type === types.Database : goalTypes.includes(n.type)))
       .filter((n) => canWin({ n, myAttack, enemyDefence }))
-      .filter((n) => !solutions[n.id].find((nId) => !canWin(lookup[nId], myAttack, enemyDefence)))
+      .filter((n) => !solutions[n.id].find((nId) => !canWin({ n: lookup[nId], myAttack, enemyDefence })))
 
     if (targets.length) {
       targets.sort((a, b) => solutions[a.id].weight - solutions[b.id].weight)
@@ -585,7 +586,7 @@
           this.weight *= 0.85
           break
         case types.Transfer:
-          this.weight *= 0.75
+          this.weight *= 0.7
           break
         case types.Database:
           this.weight *= 0.5

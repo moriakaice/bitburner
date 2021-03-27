@@ -141,20 +141,20 @@ export async function main(ns) {
 
       if (smallestCurrentServer === biggestCurrentServer) {
         while (ns.getServerMoneyAvailable('home') * settings.totalMoneyAllocation >= targetRam * settings.gbRamCost) {
-          targetRam *= 2
+          targetRam *= 4
         }
 
-        targetRam /= 2
+        targetRam /= 4
       }
 
       targetRam = Math.min(targetRam, settings.maxGbRam)
 
-      didChange = true
-      while (didChange) {
-        didChange = false
-        purchasedServers = getPurchasedServers(ns)
+      if (targetRam > ns.getServerRam(purchasedServers[0]).shift()) {
+        didChange = true
+        while (didChange) {
+          didChange = false
+          purchasedServers = getPurchasedServers(ns)
 
-        if (targetRam > ns.getServerRam(purchasedServers[0]).shift()) {
           if (ns.getServerMoneyAvailable('home') * settings.totalMoneyAllocation >= targetRam * settings.gbRamCost) {
             let hostname = `pserv-${targetRam}-${createUUID()}`
 

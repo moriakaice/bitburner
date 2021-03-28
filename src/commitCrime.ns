@@ -1,0 +1,87 @@
+const settings = {
+  keys: {
+    crimes: 'BB_CRIMES',
+  },
+  intervalToRecheck: 10 * 60 * 1000,
+}
+
+function getItem(key) {
+  let item = localStorage.getItem(key)
+
+  return item ? JSON.parse(item) : undefined
+}
+
+function setItem(key, value) {
+  localStorage.setItem(key, JSON.stringify(value))
+}
+
+function localeHHMMSS(ms = 0) {
+  if (!ms) {
+    ms = new Date().getTime()
+  }
+
+  return new Date(ms).toLocaleTimeString()
+}
+
+function getCrimesData(ns) {
+  ns.tprint(`[${localeHHMMSS()}] Spawning getCrimesData.ns`)
+  ns.spawn('getCrimesData.ns', 1)
+}
+
+function selectCrime(crimes) {
+  const crimesList = Object.keys(crimes)
+
+  let bestCrime = 'shoplift'
+  let bestCrimeWeight = 0
+
+  crimesList.forEach((crime) => {
+    const crimeWeight =
+      crimes[crime].chance *
+      (crimes[crime].stats.money / crimes[crime].stats.time) *
+      ((crimes[crime].stats.intelligence_exp + 1) / (crimes[crime].stats.intelligence_exp + 2))
+
+    if (crimeWeight > bestCrimeWeight) {
+      bestCrime = crime
+      bestCrimeWeight = crimeWeight
+    }
+  })
+
+  return bestCrime
+}
+
+export async function main(ns) {
+  ns.tprint(`[${localeHHMMSS()}] Starting commitCrime.ns`)
+
+  let hostname = ns.getHostname()
+
+  if (hostname !== 'home') {
+    throw new Exception('Run the script from home')
+  }
+
+  let continueCommitingCrime = true
+  const crimes = getItem(settings.keys.crimes)
+
+  if (!crimes) {
+    getCrimesData(ns)
+    return
+  }
+
+  const crimeToCommit = selectCrime(crimes)
+  const endTime = new Date().getTime() + settings.intervalToRecheck
+
+  while (continueCommitingCrime) {
+    if (new Date().getTime() > endTime) {
+      continueCommitingCrime = false
+    } else {
+      while (ns.isBusy()) {
+        await ns.sleep(100)
+      }
+
+      ns.tprint(`[${localeHHMMSS()}] Commiting crime: ${crimeToCommit}`)
+      ns.commitCrime(crimeToCommit)
+      await ns.sleep(crimes[crimeToCommit].stats.time + 5)
+    }
+  }
+
+  getCrimesData(ns)
+}

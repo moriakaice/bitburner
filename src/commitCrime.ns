@@ -38,7 +38,7 @@ function selectCrime(crimes) {
     const crimeWeight =
       crimes[crime].chance *
       (crimes[crime].stats.money / crimes[crime].stats.time) *
-      ((crimes[crime].stats.intelligence_exp + 1) / (crimes[crime].stats.intelligence_exp + 2))
+      ((crimes[crime].stats.intelligence_exp * 0.1 + 1) / (crimes[crime].stats.intelligence_exp * 0.1 + 2))
 
     if (crimeWeight > bestCrimeWeight) {
       bestCrime = crime

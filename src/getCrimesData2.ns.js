@@ -37,9 +37,9 @@ function localeHHMMSS(ms = 0) {
 }
 
 export async function main(ns) {
-  ns.tprint(`[${localeHHMMSS()}] Starting getCrimesData.ns`)
+  ns.tprint(`[${localeHHMMSS()}] Starting getCrimesData2.ns`)
 
-  const scriptToRunAfter = ns.args[0] || 'getCrimesData2.ns'
+  const scriptToRunAfter = ns.args[0] || 'commitCrime.ns'
 
   let hostname = ns.getHostname()
 
@@ -51,9 +51,9 @@ export async function main(ns) {
   const crimes = {}
 
   settings.crimes.map((crime) => {
-    const chance = ns.getCrimeChance(crime)
+    const stats = ns.getCrimeStats(crime)
 
-    crimes[crime] = { ...crimesCache[crime], chance }
+    crimes[crime] = { ...crimesCache[crime], stats }
   })
 
   setItem(settings.keys.crimes, crimes)

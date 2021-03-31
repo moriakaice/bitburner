@@ -288,12 +288,13 @@ export async function main(ns) {
 
         weakenCycles = weakenCyclesForGrow(growCycles) + weakenCyclesForHack(hackCycles)
         growCycles -= weakenCycles
+        hackCycles -= Math.ceil((weakenCyclesForHack(hackCycles) * 1.75) / 1.7)
 
         growCycles = Math.max(0, growCycles)
       } else {
         growCycles = 0
         weakenCycles = weakenCyclesForHack(hackCycles)
-        hackCycles -= weakenCycles
+        hackCycles -= Math.ceil((weakenCycles * 1.75) / 1.7)
       }
 
       ns.tprint(`[${localeHHMMSS()}] Cycles ratio: ${hackCycles} hack cycles; ${growCycles} grow cycles; ${weakenCycles} weaken cycles`)

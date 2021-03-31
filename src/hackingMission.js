@@ -1,5 +1,4 @@
 // based on https://github.com/Penndrageist/bitburner-scripts/blob/master/scripts/HackingMission.js.js
-
 ;(function (document) {
   const settings = {
     keys: {
@@ -126,6 +125,7 @@
       injectMiddleMan(lookup)
 
       await startGame(ns)
+      await ns.sleep(500)
 
       try {
         if (lastValues.timeoutInstance) {
@@ -265,6 +265,7 @@
   }
 
   async function completeMission(ns, grid, nodes, lookup, buttons) {
+    await ns.sleep(500)
     const scan = buttons.scan
     const attack = buttons.attack
     const overflow = buttons.overflow
@@ -283,18 +284,12 @@
       const cpus = nodes.filter((n) => n.isMine).filter((n) => n.type === types.CPU)
       const xferNodes = nodes.filter((n) => n.isMine).filter((n) => n.type === types.Transfer)
 
-      var playerStats = document.getElementById('hacking-mission-player-stats')
-      if (playerStats === null) return
-
       const myAttack =
         lastValues.player[0] * 10 ||
-        playerStats.innerText.split('\n').map((e) => {
+        document.getElementById('hacking-mission-player-stats').innerText.split('\n').map((e) => {
           const temp = e.split(' ')
           return Number(temp[temp.length - 1].replace(/,/g, ''))
         })[0]
-
-      var enemyStats = document.getElementById('hacking-mission-enemy-stats')
-      if (enemyStats === null) return
 
       const isIdle = !cpus.some((cpu) => cpu.connection)
 
@@ -447,14 +442,6 @@
 
   function getButtons(ns) {
     const elements = document.getElementsByClassName('a-link-button-inactive tooltip hack-mission-header-element')
-
-    /*
-	for(var i = 0; i < elements.length; i++)
-	{
-		var butt = elements[i];
-		ns.print(butt.text);
-	}
-	*/
 
     return {
       attack: elements[0],

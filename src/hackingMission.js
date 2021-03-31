@@ -286,15 +286,23 @@
 
       const myAttack =
         lastValues.player[0] * 10 ||
-        document.getElementById('hacking-mission-player-stats').innerText.split('\n').map((e) => {
-          const temp = e.split(' ')
-          return Number(temp[temp.length - 1].replace(/,/g, ''))
-        })[0]
+        document
+          .getElementById('hacking-mission-player-stats')
+          .innerText.split('\n')
+          .map((e) => {
+            const temp = e.split(' ')
+            return Number(temp[temp.length - 1].replace(/,/g, ''))
+          })[0]
 
       const isIdle = !cpus.some((cpu) => cpu.connection)
 
       if (plan.length === 0 && isIdle) {
-        plan = createPlan({ lookup, nodes, myAttack, goalTypes: [types.Database, types.Transfer, types.Spam] })
+        plan = createPlan({
+          lookup,
+          nodes,
+          myAttack,
+          goalTypes: [types.Database, types.Transfer, types.Spam],
+        })
 
         if (plan.length > 0) {
           console.log('plan', plan)

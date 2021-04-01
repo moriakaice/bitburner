@@ -1,6 +1,7 @@
 const settings = {
   keys: {
     crimes: 'BB_CRIMES',
+    crimesStop: 'BB_CRIMES_STOP',
   },
   intervalToRecheck: 10 * 60 * 1000,
 }
@@ -70,7 +71,9 @@ export async function main(ns) {
   const endTime = new Date().getTime() + settings.intervalToRecheck
 
   while (continueCommitingCrime) {
-    if (new Date().getTime() > endTime) {
+    const crimesStop = getItem(settings.keys.crimesStop)
+
+    if (crimesStop || new Date().getTime() > endTime) {
       continueCommitingCrime = false
     } else {
       while (ns.isBusy()) {

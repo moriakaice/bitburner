@@ -31,11 +31,14 @@ function getCrimesData(ns) {
 
 function selectCrime(crimes) {
   const crimesList = Object.keys(crimes)
+  crimesList.sort((a, b) => crimes[b].chance - crimes[a].chance)
+  const solidChanceCrimes = crimesList.filter((crime) => crimes[crime].chance >= 0.8)
+  const topCrimesList = solidChanceCrimes.length > 3 ? solidChanceCrimes : crimesList.slice(0, 2)
 
   let bestCrime = 'shoplift'
   let bestCrimeWeight = 0
 
-  crimesList.forEach((crime) => {
+  topCrimesList.forEach((crime) => {
     const crimeWeight =
       crimes[crime].chance *
       (crimes[crime].stats.money / crimes[crime].stats.time) *

@@ -467,19 +467,23 @@
     let reputationMax = 85000
     let minPlayerHackingSkill = 300
 
-    let text = document.querySelector('p.tooltip span.reputation').textContent.trim()
+    let text = document.querySelector('p.tooltip span.reputation')
 
-    reputation = parseFloat(
-      text
-        .replace(/,/g, '')
-        .replace(/[^0-9\.]*/g, '')
-        .trim()
-    )
+    if (text) {
+      text = text.textContent.trim()
 
-    if (text.includes('k')) {
-      reputation *= 1000
-    } else if (text.includes('m')) {
-      reputation *= 1000000
+      reputation = parseFloat(
+        text
+          .replace(/,/g, '')
+          .replace(/[^0-9\.]*/g, '')
+          .trim()
+      )
+
+      if (text.includes('k')) {
+        reputation *= 1000
+      } else if (text.includes('m')) {
+        reputation *= 1000000
+      }
     }
 
     const playerHackingSkill = parseInt(document.querySelector('#character-hack-text').textContent.replace(/,/g, '').replace(/\s+/g, '').trim(), 10) || 1

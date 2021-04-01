@@ -86,5 +86,9 @@ export async function main(ns) {
     }
   }
 
-  getCrimesData(ns)
+  const crimesStop = getItem(settings.keys.crimesStop)
+
+  if (!crimesStop) {
+    getCrimesData(ns)
+  }
 }

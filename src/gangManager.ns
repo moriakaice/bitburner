@@ -116,6 +116,7 @@ export async function main(ns) {
 
     const gangMemberNames = getMemberNames(ns)
 
+    const strengthAscensionMultHardLimit = 10
     let strengthAscensionMultExpectation = 0
     gangMemberNames.forEach((gangMemberName) => {
       const gangMemberInfo = getMemberInformation(ns, gangMemberName)
@@ -123,7 +124,7 @@ export async function main(ns) {
       strengthAscensionMultExpectation = Math.min(strengthAscensionMultExpectation, gangMemberInfo.strengthAscensionMult)
     })
 
-    strengthAscensionMultExpectation = Math.max(0, strengthAscensionMultExpectation) + 5
+    strengthAscensionMultExpectation = Math.max(0, strengthAscensionMultExpectation) + 2
 
     gangMemberNames.forEach((gangMemberName) => {
       const gangMemberInfo = getMemberInformation(ns, gangMemberName)
@@ -144,7 +145,11 @@ export async function main(ns) {
         }
       })
 
-      if (hasAllEquipment && gangMemberInfo.strengthAscensionMult < strengthAscensionMultExpectation) {
+      if (
+        hasAllEquipment &&
+        gangMemberInfo.strengthAscensionMult < strengthAscensionMultExpectation &&
+        gangMemberInfo.strengthAscensionMult < strengthAscensionMultHardLimit
+      ) {
         gangMembersToAscend.push(gangMemberName)
       }
     })

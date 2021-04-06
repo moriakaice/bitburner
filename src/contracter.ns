@@ -1,0 +1,723 @@
+// Based on https://github.com/Penndrageist/bitburner-scripts/tree/master/scripts
+const settings = {
+  keys: {
+    serverMap: 'BB_SERVER_MAP',
+  },
+}
+
+function getItem(key) {
+  let item = localStorage.getItem(key)
+
+  return item ? JSON.parse(item) : undefined
+}
+
+function localeHHMMSS(ms = 0) {
+  if (!ms) {
+    ms = new Date().getTime()
+  }
+
+  return new Date(ms).toLocaleTimeString()
+}
+
+function recurseSumTriangle(data, sumsList, level, index, runningTotal, pathString = '') {
+  runningTotal += data[level][index]
+  pathString = pathString.concat(`${pathString.length === 0 ? '' : '+'}${data[level][index]}`)
+
+  if (level == data.length - 1) {
+    sumsList.push([runningTotal, pathString])
+    return
+  }
+
+  recurseSumTriangle(data, sumsList, level + 1, index, runningTotal, pathString)
+  recurseSumTriangle(data, sumsList, level + 1, index + 1, runningTotal, pathString)
+}
+
+function minimumPathSumTriangle(data) {
+  var sums = []
+
+  recurseSumTriangle(data, sums, 0, 0, 0)
+  sums.sort((a, b) => {
+    return a[0] - b[0]
+  })
+
+  return sums[0][0]
+}
+
+function ValidateParentheses(parString) {
+  var parathesisStack = []
+  var openPar = '('
+  var closePar = ')'
+  var a = 'a'
+
+  for (var i = 0; i < parString.length; i++) {
+    if (parString[i] == a) continue
+
+    if (parString[i] == openPar) {
+      parathesisStack.push(openPar)
+    } else if (parString[i] == closePar) {
+      // cannot close if nothing has opened
+      if (parathesisStack.length === 0) {
+        return false
+      } else if (parathesisStack[parathesisStack.length - 1] == openPar) {
+        parathesisStack.pop()
+      } else {
+        // something wrong
+        return false
+      }
+    } else {
+      // something wrong
+      return false
+    }
+  }
+
+  return parathesisStack.length === 0
+}
+
+function recurseRemoveCharacters(inputString, charsToRemove, workingList) {
+  if (charsToRemove === 0) {
+    if (!workingList.includes(inputString)) {
+      var isValid = ValidateParentheses(inputString)
+
+      if (isValid) {
+        workingList.push(inputString)
+      }
+    }
+
+    return
+  }
+
+  for (var i = 0; i < inputString.length; i++) {
+    if (inputString[i] == 'a') {
+      // only remove parentheses
+      continue
+    }
+
+    var remString = inputString.substring(0, i) + inputString.substring(i + 1, inputString.length)
+
+    recurseRemoveCharacters(remString, charsToRemove - 1, workingList)
+  }
+}
+
+function sanitizeParentheses(data) {
+  var validStrings = []
+
+  for (var i = 0; i < data.length && validStrings.length === 0; i++) {
+    var workingStrings = []
+
+    recurseRemoveCharacters(data, i, workingStrings)
+
+    validStrings = workingStrings
+  }
+
+  // might be impossible to validate
+  if (validStrings.length === 0) validStrings = ['']
+
+  return validStrings
+}
+
+function recurseGrid(grid, x, y) {
+  if (x == grid.length - 1 && y == grid[0].length - 1) {
+    return 1
+  } else if (x == grid.length || y == grid[0].length) {
+    return 0
+  } else if (grid[x][y] == 1) {
+    return 0
+  } else {
+    return recurseGrid(grid, x + 1, y) + recurseGrid(grid, x, y + 1)
+  }
+}
+
+// given array [x,y], how many paths from [0,0]->{x-1,y-1], going down/right only
+function uniqueGridPathsI(data) {
+  var grid = []
+
+  for (var x = 0; x < data[0]; x++) {
+    grid[x] = []
+    for (var y = 0; y < data[1]; y++) {
+      grid[x][y] = 0
+    }
+  }
+
+  return recurseGrid(grid, 0, 0)
+}
+
+// given a 10x10 grid of 0 or 1, unique paths from [0,0]->{x-1,y-1], going down/right only, avoiding 1s
+function uniqueGridPathsII(data) {
+  return recurseGrid(data, 0, 0)
+}
+
+function validateAddress(address) {
+  // "17+45*7-18"
+  var numbers = address.split('.')
+
+  if (numbers.length != 4) {
+    return false
+  }
+
+  for (var i = 0; i < numbers.length; i++) {
+    var octet = numbers[i]
+
+    if (octet.length > 1 && octet[0] == '0') {
+      return false
+    }
+
+    var octetAsNum = Number(octet)
+
+    if (octetAsNum < 0) return false
+    if (octetAsNum > 255) return false
+  }
+
+  return true
+}
+
+function generateAddresses(list, buildingExpr, remainingStr) {
+  if (remainingStr === undefined || remainingStr === null) remainingStr = ''
+
+  buildingExpr += ''
+  remainingStr += ''
+
+  if (remainingStr.length === 0) {
+    var processed = validateAddress(buildingExpr)
+
+    if (processed) {
+      list.push(buildingExpr)
+    }
+
+    return
+  }
+
+  var remString = remainingStr.substring(1)
+  if (remString === undefined || remString === null) remString = ''
+
+  generateAddresses(list, buildingExpr.concat(remainingStr[0]), remString)
+  generateAddresses(list, buildingExpr.concat('.', remainingStr[0]), remString)
+}
+
+function generateIPs(data) {
+  /*
+        Examples:
+        25525511135 -> [255.255.11.135, 255.255.111.35]
+        1938718066 -> [193.87.180.66]
+    */
+  var list = []
+
+  generateAddresses(list, data[0], data.substring(1))
+
+  if (list.length === 0) list = ['']
+
+  return list
+}
+
+function processExpression(expression) {
+  // "17+45*7-18"
+  var numbers = expression.split(/[+,\-,*]/g) // ["17","45","7","18"]
+  var operators = expression.split(/\d+/g) // ["",+,*,-,""]
+
+  if (operators.length > 0) {
+    operators.splice(0, 1)
+    operators.splice(operators.length - 1, 1)
+  }
+
+  var exprAsArr = []
+
+  while (operators.length > 0 || numbers.length > 0) {
+    if (numbers.length > 0) exprAsArr.push(numbers.shift())
+    if (operators.length > 0) exprAsArr.push(operators.shift())
+  }
+
+  while (exprAsArr.length > 1) {
+    var iMul = exprAsArr.indexOf('*')
+
+    if (iMul == -1) {
+      iMul = 1
+    }
+
+    var lhs = Number(exprAsArr[iMul - 1])
+    var rhs = Number(exprAsArr[iMul + 1])
+    var op = exprAsArr[iMul]
+
+    var res = -1
+
+    if (op == '+') {
+      res = lhs + rhs
+    } else if (op == '-') {
+      res = lhs - rhs
+    } else if (op == '*') {
+      res = lhs * rhs
+    }
+
+    exprAsArr.splice(iMul - 1, 3, res)
+  }
+
+  return exprAsArr[0]
+}
+
+function generateExpressions(target, list, buildingExpr, remainingStr) {
+  if (remainingStr === undefined || remainingStr === null) remainingStr = ''
+
+  buildingExpr += ''
+  remainingStr += ''
+
+  if (remainingStr.length === 0) {
+    var processed = processExpression(buildingExpr)
+
+    if (processed == target) {
+      list.push(buildingExpr)
+    }
+
+    return
+  }
+
+  var remString = remainingStr.substring(1)
+  if (remString === undefined || remString === null) remString = ''
+
+  generateExpressions(target, list, buildingExpr.concat(remainingStr[0]), remString)
+  generateExpressions(target, list, buildingExpr.concat('+', remainingStr[0]), remString)
+  generateExpressions(target, list, buildingExpr.concat('-', remainingStr[0]), remString)
+  generateExpressions(target, list, buildingExpr.concat('*', remainingStr[0]), remString)
+}
+
+function findAllValidMathExpressions(data) {
+  var str = data[0] + ''
+  var target = parseInt(data[1], 10)
+
+  var list = []
+
+  generateExpressions(target, list, str[0], str.substring(1))
+
+  return list
+}
+
+function integerPartition(number) {
+  // Create partition matrix for solving this task using Dynamic Programming.
+  const partitionMatrix = Array(number + 1)
+    .fill(null)
+    .map(() => {
+      return Array(number + 1).fill(null)
+    })
+
+  // Fill partition matrix with initial values.
+
+  // Let's fill the first row that represents how many ways we would have
+  // to combine the numbers 1, 2, 3, ..., n with number 0. We would have zero
+  // ways obviously since with zero number we may form only zero.
+  for (let numberIndex = 1; numberIndex <= number; numberIndex += 1) {
+    partitionMatrix[0][numberIndex] = 0
+  }
+
+  // Let's fill the first column. It represents the number of ways we can form
+  // number zero out of numbers 0, 0 and 1, 0 and 1 and 2, 0 and 1 and 2 and 3, ...
+  // Obviously there is only one way we could form number 0
+  // and it is with number 0 itself.
+  for (let summandIndex = 0; summandIndex <= number; summandIndex += 1) {
+    partitionMatrix[summandIndex][0] = 1
+  }
+
+  // Now let's go through other possible options of how we could form number m out of
+  // summands 0, 1, ..., m using Dynamic Programming approach.
+  for (let summandIndex = 1; summandIndex <= number; summandIndex += 1) {
+    for (let numberIndex = 1; numberIndex <= number; numberIndex += 1) {
+      if (summandIndex > numberIndex) {
+        // If summand number is bigger then current number itself then just it won't add
+        // any new ways of forming the number. Thus we may just copy the number from row above.
+        partitionMatrix[summandIndex][numberIndex] = partitionMatrix[summandIndex - 1][numberIndex]
+      } else {
+        /*
+         * The number of combinations would equal to number of combinations of forming the same
+         * number but WITHOUT current summand number PLUS number of combinations of forming the
+         * <current number - current summand> number but WITH current summand.
+         *
+         * Example:
+         * Number of ways to form 5 using summands {0, 1, 2} would equal the SUM of:
+         * - number of ways to form 5 using summands {0, 1} (we've excluded summand 2)
+         * - number of ways to form 3 (because 5 - 2 = 3) using summands {0, 1, 2}
+         * (we've included summand 2)
+         */
+        const combosWithoutSummand = partitionMatrix[summandIndex - 1][numberIndex]
+        const combosWithSummand = partitionMatrix[summandIndex][numberIndex - summandIndex]
+
+        partitionMatrix[summandIndex][numberIndex] = combosWithoutSummand + combosWithSummand
+      }
+    }
+  }
+
+  return partitionMatrix[number][number]
+}
+
+function lpf(a) {
+  let b = 2
+  while (a > b) {
+    if (a % b === 0) {
+      a = a / b
+      b = 2
+    } else {
+      b += 1
+    }
+  }
+
+  return b
+}
+
+function sumSubarrays(arr) {
+  var sumMax = arr[0]
+
+  for (var i = 0; i < arr.length; i++) {
+    sumMax = Math.max(sumMax, arr[i])
+
+    var runningTotal = arr[i]
+    for (var j = i + 1; j < arr.length; j++) {
+      runningTotal += arr[j]
+      sumMax = Math.max(sumMax, runningTotal)
+    }
+  }
+
+  return sumMax
+}
+
+function spiralise(grid) {
+  var yDim = grid.length
+
+  if (yDim === 1) return grid[0]
+
+  var xDim = grid[0].length
+  var output = []
+
+  var xMin = 0
+  var xMax = xDim - 1
+  var x = 0
+  var xDir = 1
+
+  var yMin = 1
+  var yMax = yDim - 1
+  var y = 0
+  var yDir = 0
+
+  while (output.length < xDim * yDim) {
+    output.push(grid[y][x])
+
+    x += xDir
+    y += yDir
+
+    if (x >= xMax && xDir == 1 && yDir === 0) {
+      x = xMax
+      xDir = 0
+      yDir = 1
+      xMax--
+    } else if (x <= xMin && xDir == -1 && yDir === 0) {
+      x = xMin
+      xDir = 0
+      yDir = -1
+      xMin++
+    } else if (y >= yMax && xDir === 0 && yDir == 1) {
+      y = yMax
+      xDir = -1
+      yDir = 0
+      yMax--
+    } else if (y <= yMin && xDir === 0 && yDir == -1) {
+      y = yMin
+      xDir = 1
+      yDir = 0
+      yMin++
+    }
+  }
+
+  return output
+}
+
+function recurseJump(data, index) {
+  // can't check passed the end of the array
+  // but if the input value exceed the array length, we must've made it
+  if (index >= data.length) return 1
+
+  // if we're exactly at the end of the array
+  // we've made it
+  if (index == data.length - 1) return 1
+
+  // we're not at the end of the array, but this position is 0
+  // and so we can't jump further from here
+  if (data[index] === 0) return 0
+
+  // check each jumped forward position, up to the extent of
+  // the current cell's value ahead of the current cell
+  for (var i = index + 1; i < index + data[index]; i++) {
+    // if we find a path, we've made it
+    // no need to check others, so just return
+    if (recurseJump(data, i) == 1) return 1
+  }
+
+  return 0
+}
+
+function arrayJumping(data) {
+  return recurseJump(data, 0)
+}
+
+function mergeIntervals(data) {
+  data.sort((a, b) => {
+    return a[0] - b[0]
+  })
+
+  var didMerge = false
+
+  for (var i = 0; i < data.length - 1 && !didMerge; i++) {
+    var intervalL = data[i]
+    var intervalR = data[i + 1]
+
+    if (intervalL[0] <= intervalR[0] && intervalR[0] <= intervalL[1]) {
+      var newInterval = [Math.min(intervalL[0], intervalR[0]), Math.max(intervalL[1], intervalR[1])]
+
+      data.splice(i, 2, newInterval)
+
+      didMerge = true
+      break
+    }
+  }
+
+  return didMerge ? mergeIntervals(data) : data
+}
+
+function totalValueOfPairs(stockPairs, maxTrades = -1) {
+  var profit = 0
+  if (maxTrades <= 0) maxTrades = stockPairs.length
+
+  var stockPairsCpy = stockPairs.slice()
+  stockPairsCpy.sort((a, b) => {
+    return b[1] - b[0] - (a[1] - a[0])
+  })
+
+  for (var i = 0; i < maxTrades && i < stockPairsCpy.length; i++) {
+    profit += stockPairsCpy[i][1] - stockPairsCpy[i][0]
+  }
+
+  return profit
+}
+
+function recursiveMergeStock(outputList, pairsToMerge, maxStepSize, maxTrades, maxDepth = 20) {
+  if (pairsToMerge.length <= maxTrades || maxStepSize <= 0 || maxDepth <= 0) {
+    outputList.push(pairsToMerge.slice())
+    return
+  }
+
+  for (var i = 0; i < pairsToMerge.length - 1; i++) {
+    var pairA = pairsToMerge[i]
+    var lowValue = pairA[0]
+    var highValue = pairA[1]
+
+    var mip = []
+
+    var maxIndex = Math.min(pairsToMerge.length, i + maxStepSize + 1)
+
+    for (var j = i + 1; j < maxIndex; j++) {
+      var pairB = pairsToMerge[j]
+
+      // Next pair's low value is lower. Can't merge further right.
+      if (lowValue >= pairB[0]) break
+
+      if (lowValue < pairB[0] && pairB[1] > highValue) {
+        mip = [i, j]
+        highValue = pairB[1]
+      }
+    }
+
+    if (mip.length == 2) {
+      var workingPairs = pairsToMerge.slice()
+
+      var mergedPairs = [workingPairs[mip[0]][0], workingPairs[mip[1]][1]]
+
+      workingPairs.splice(mip[0], mip[1] - mip[0] + 1, mergedPairs)
+
+      recursiveMergeStock(outputList, workingPairs, workingPairs.length - 1, maxTrades, maxDepth - 1)
+    }
+  }
+
+  outputList.push(pairsToMerge.slice())
+}
+
+function calculateStock(maxTrades, stockPrices) {
+  var stockPairs = []
+
+  var highIndex = stockPrices.length - 1
+  var highPrice = stockPrices[highIndex]
+
+  var prevPrice = highPrice
+  for (var i = stockPrices.length - 2; i >= 0; i--) {
+    var price = stockPrices[i]
+
+    if (highIndex == -1 || highPrice == -1) {
+      highIndex = i
+      highPrice = price
+    } else if (price > prevPrice) {
+      if (i + 1 != highIndex) {
+        stockPairs.unshift([prevPrice, highPrice])
+      }
+
+      highIndex = i
+      highPrice = price
+    } else if (i === 0) {
+      stockPairs.unshift([price, highPrice])
+    }
+
+    prevPrice = price
+  }
+
+  if (stockPairs.length === 0) return 0
+
+  if (maxTrades <= 0) {
+    maxTrades = stockPairs.length
+  }
+
+  var outList = []
+
+  // function recursiveMergeStock(outputList, pairsToMerge, maxStepSize, maxTrades)
+  recursiveMergeStock(outList, stockPairs, stockPairs.length, maxTrades, 40)
+
+  outList.sort((a, b) => {
+    return totalValueOfPairs(b, maxTrades) - totalValueOfPairs(a, maxTrades)
+  })
+
+  var profit = 0
+
+  var finalStockPairs = outList[0]
+
+  profit = totalValueOfPairs(finalStockPairs, maxTrades)
+
+  return profit
+}
+
+// stock trading, single transactions
+function algorithmicStockI(data) {
+  return calculateStock(1, data)
+}
+
+// stock trading, no limit on transactions
+function algorithmicStockII(data) {
+  // example: 129,25,109,86,19,7,199,21,27,173,83,133
+  // ans: 478
+
+  return calculateStock(0, data)
+}
+
+// stock trading, up to 2 transactions
+function algorithmicStockIII(data) {
+  return calculateStock(2, data)
+}
+
+// stock trading, up to k transactions. data[0]==k, data[1]==stockPriceArray
+function algorithmicStockIV(data) {
+  return calculateStock(data[0], data[1])
+}
+
+function findAnswer(contract) {
+  let answer
+
+  switch (contract.type) {
+    case 'Find Largest Prime Factor':
+      answer = lpf(contract.data)
+      break
+    case 'Subarray with Maximum Sum':
+      answer = sumSubarrays(contract.data)
+      break
+    case 'Total Ways to Sum':
+      answer = integerPartition(contract.data) - 1
+      break
+    case 'Spiralize Matrix':
+      answer = spiralise(contract.data)
+      break
+    case 'Array Jumping Game':
+      answer = arrayJumping(contract.data)
+      break
+    case 'Merge Overlapping Intervals':
+      answer = mergeIntervals(contract.data)
+      break
+    case 'Generate IP Addresses':
+      answer = generateIPs(contract.data)
+      break
+    case 'Algorithmic Stock Trader I':
+      answer = algorithmicStockI(contract.data)
+      break
+    case 'Algorithmic Stock Trader II':
+      answer = algorithmicStockII(contract.data)
+      break
+    case 'Algorithmic Stock Trader III':
+      answer = algorithmicStockIII(contract.data)
+      break
+    case 'Algorithmic Stock Trader IV':
+      answer = algorithmicStockIV(contract.data)
+      break
+    case 'Minimum Path Sum in a Triangle':
+      answer = minimumPathSumTriangle(contract.data)
+      break
+    case 'Unique Paths in a Grid I':
+      answer = uniqueGridPathsI(contract.data)
+      break
+    case 'Unique Paths in a Grid II':
+      answer = uniqueGridPathsII(contract.data)
+      break
+    case 'Sanitize Parentheses in Expression':
+      answer = sanitizeParentheses(contract.data)
+      break
+    case 'Find All Valid Math Expressions':
+      answer = findAllValidMathExpressions(contract.data)
+  }
+
+  return answer
+}
+
+export async function main(ns) {
+  ns.tprint(`[${localeHHMMSS()}] Starting contracter.ns`)
+
+  let hostname = ns.getHostname()
+
+  if (hostname !== 'home') {
+    throw new Exception('Run the script from home')
+  }
+
+  const serverMap = getItem(settings.keys.serverMap)
+  const contractsDb = []
+
+  Object.keys(serverMap.servers).forEach((hostname) => {
+    const files = ns.ls(hostname)
+    if (files && files.length) {
+      const contracts = files.filter((file) => file.includes('.cct'))
+
+      if (contracts.length) {
+        contracts.forEach((contract) => {
+          const contractData = {
+            contract,
+            hostname,
+            type: ns.codingcontract.getContractType(contract, hostname),
+            data: ns.codingcontract.getData(contract, hostname),
+            numTriesRemaining: ns.codingcontract.getNumTriesRemaining(contract, hostname),
+          }
+
+          contractsDb.push(contractData)
+        })
+      }
+    }
+  })
+
+  if (contractsDb.length) {
+    for (let i = 0; i < contractsDb.length; i++) {
+      const contract = contractsDb[i]
+      const answer = findAnswer(contract)
+
+      if (answer != null) {
+        if (contract.numTriesRemaining > 2) {
+          const solvingResult = ns.codingcontract.attempt(answer, contract.contract, contract.hostname, { returnReward: true })
+
+          if (solvingResult) {
+            ns.tprint(`[${localeHHMMSS()}] Solved ${contract.contract} on ${contract.hostname}. ${solvingResult}`)
+          } else {
+            ns.tprint(`[${localeHHMMSS()}] Wrong answer for ${contract.contract} on ${contract.hostname}`)
+          }
+        } else {
+          ns.tprint(`[${localeHHMMSS()}] ${contract.contract} on ${contract.hostname}: possible answer: ${JSON.stringify(answer)}`)
+        }
+      } else {
+        ns.tprint(`[${localeHHMMSS()}] Unable to find the answer for: ${JSON.stringify(contract)}`)
+      }
+
+      await ns.sleep(10)
+    }
+  }
+}

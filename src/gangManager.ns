@@ -1,3 +1,21 @@
+const settings = {
+  keys: {
+    buyEquipment: 'BB_BUY_EQUIPMENT',
+    doAscension: 'BB_DO_ASCENSION',
+    strAscMultHardLimit: 'BB_STR_ASC_MULT_HARD_LIMIT',
+  },
+}
+
+function getItem(key) {
+  let item = localStorage.getItem(key)
+
+  return item ? JSON.parse(item) : undefined
+}
+
+function setItem(key, value) {
+  localStorage.setItem(key, JSON.stringify(value))
+}
+
 const gangMemberNamesList = [
   'Darth Vader',
   'Joker',
@@ -104,6 +122,13 @@ export async function main(ns) {
   let nextAscensionAttempt = new Date().getTime() + 60 * 1000
 
   while (true) {
+    const doAscension = getItem(settings.keys.doAscension) || false
+    const buyEquipment = getItem(settings.keys.buyEquipment) || false
+    const strengthAscensionMultHardLimit = getItem(settings.keys.strAscMultHardLimit) || 10
+    setItem(settings.keys.doAscension, doAscension)
+    setItem(settings.keys.buyEquipment, buyEquipment)
+    setItem(settings.keys.strAscMultHardLimit, strengthAscensionMultHardLimit)
+
     const equipmentsToBuy = getEquipmentsToBuy(ns)
     const gangMembersToAscend = []
 
@@ -116,7 +141,6 @@ export async function main(ns) {
 
     const gangMemberNames = getMemberNames(ns)
 
-    const strengthAscensionMultHardLimit = 10
     let strengthAscensionMultExpectation = 0
     gangMemberNames.forEach((gangMemberName) => {
       const gangMemberInfo = getMemberInformation(ns, gangMemberName)
@@ -125,37 +149,36 @@ export async function main(ns) {
     })
 
     strengthAscensionMultExpectation = Math.max(0, strengthAscensionMultExpectation) + 2
+    strengthAscensionMultExpectation = Math.min(strengthAscensionMultExpectation, strengthAscensionMultHardLimit)
 
     gangMemberNames.forEach((gangMemberName) => {
       const gangMemberInfo = getMemberInformation(ns, gangMemberName)
       let hasAllEquipment = true
 
-      equipmentsToBuy.forEach((equipment) => {
-        if (gangMemberInfo.equipment.includes(equipment.name)) return
-        if (gangMemberInfo.augmentations.includes(equipment.name)) return
+      if (buyEquipment) {
+        equipmentsToBuy.forEach((equipment) => {
+          if (gangMemberInfo.equipment.includes(equipment.name)) return
+          if (gangMemberInfo.augmentations.includes(equipment.name)) return
 
-        const boughtEquipment = ns.gang.purchaseEquipment(gangMemberName, equipment.name)
+          const boughtEquipment = ns.gang.purchaseEquipment(gangMemberName, equipment.name)
 
-        if (equipment.type !== 'Augmentation') {
-          hasAllEquipment = false
+          if (equipment.type !== 'Augmentation') {
+            hasAllEquipment = false
+          }
+
+          if (boughtEquipment) {
+            ns.print(`[${localeHHMMSS()}] Bought ${equipment.name} (${equipment.type}) for ${gangMemberName}`)
+          }
+        })
+
+        if (hasAllEquipment && gangMemberInfo.strengthAscensionMult < strengthAscensionMultExpectation) {
+          gangMembersToAscend.push(gangMemberName)
         }
-
-        if (boughtEquipment) {
-          ns.print(`[${localeHHMMSS()}] Bought ${equipment.name} (${equipment.type}) for ${gangMemberName}`)
-        }
-      })
-
-      if (
-        hasAllEquipment &&
-        gangMemberInfo.strengthAscensionMult < strengthAscensionMultExpectation &&
-        gangMemberInfo.strengthAscensionMult < strengthAscensionMultHardLimit
-      ) {
-        gangMembersToAscend.push(gangMemberName)
       }
     })
 
     if (new Date().getTime() > nextAscensionAttempt) {
-      if (gangMemberNames.length === 30) {
+      if (doAscension && gangMemberNames.length === 30) {
         gangMembersToAscend
           .sort((a, b) => {
             const strengthAscensionMultA = getMemberInformation(ns, a).strengthAscensionMult

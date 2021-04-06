@@ -103,8 +103,8 @@ function getEquipmentsToBuy(ns) {
 
 function getMemberAbilities(ns, name) {
   const gangMemberInfo = getMemberInformation(ns, name)
-  const terrorismAbilities = gangMemberInfo.hacking + gangMemberInfo.strength + gangMemberInfo.defense + gangMemberInfo.dexterity + gangMemberInfo.charisma
-  const vigilantieAbilities = gangMemberInfo.hacking + gangMemberInfo.strength + gangMemberInfo.defense + gangMemberInfo.dexterity + gangMemberInfo.charisma
+  const terrorismAbilities = gangMemberInfo.hack + gangMemberInfo.str + gangMemberInfo.def + gangMemberInfo.dex + gangMemberInfo.cha
+  const vigilantieAbilities = gangMemberInfo.hack + gangMemberInfo.str + gangMemberInfo.def + gangMemberInfo.dex + gangMemberInfo.agi
 
   return { terrorismAbilities, vigilantieAbilities }
 }
@@ -145,7 +145,7 @@ export async function main(ns) {
     gangMemberNames.forEach((gangMemberName) => {
       const gangMemberInfo = getMemberInformation(ns, gangMemberName)
 
-      strengthAscensionMultExpectation = Math.min(strengthAscensionMultExpectation, gangMemberInfo.strengthAscensionMult)
+      strengthAscensionMultExpectation = Math.min(strengthAscensionMultExpectation, gangMemberInfo.str_asc_mult)
     })
 
     strengthAscensionMultExpectation = Math.max(0, strengthAscensionMultExpectation) + 2
@@ -157,7 +157,7 @@ export async function main(ns) {
 
       if (buyEquipment) {
         equipmentsToBuy.forEach((equipment) => {
-          if (gangMemberInfo.equipment.includes(equipment.name)) return
+          if (gangMemberInfo.upgrades.includes(equipment.name)) return
           if (gangMemberInfo.augmentations.includes(equipment.name)) return
 
           const boughtEquipment = ns.gang.purchaseEquipment(gangMemberName, equipment.name)
@@ -171,7 +171,7 @@ export async function main(ns) {
           }
         })
 
-        if (hasAllEquipment && gangMemberInfo.strengthAscensionMult < strengthAscensionMultExpectation) {
+        if (hasAllEquipment && gangMemberInfo.str_asc_mult < strengthAscensionMultExpectation) {
           gangMembersToAscend.push(gangMemberName)
         }
       }
@@ -181,10 +181,10 @@ export async function main(ns) {
       if (doAscension && gangMemberNames.length === 30) {
         gangMembersToAscend
           .sort((a, b) => {
-            const strengthAscensionMultA = getMemberInformation(ns, a).strengthAscensionMult
-            const strengthAscensionMultB = getMemberInformation(ns, b).strengthAscensionMult
+            const earnedRespectA = getMemberInformation(ns, a).earnedRespect
+            const earnedRespectB = getMemberInformation(ns, b).earnedRespect
 
-            return strengthAscensionMultB - strengthAscensionMultA
+            return earnedRespectA - earnedRespectB
           })
           .slice(0, Math.ceil(gangMembersToAscend.length / 3))
           .forEach((gangMemberName) => {
@@ -193,7 +193,7 @@ export async function main(ns) {
           })
       }
 
-      nextAscensionAttempt = new Date().getTime() + 60 * 1000
+      nextAscensionAttempt = new Date().getTime() + 10 * 60 * 1000
     }
 
     const myGang = getMyGangInformation(ns)

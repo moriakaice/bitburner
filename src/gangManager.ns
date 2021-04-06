@@ -169,7 +169,9 @@ export async function main(ns) {
     }
 
     const myGang = getMyGangInformation(ns)
-    const wantToReduceWanted = myGang.wantedLevel > 1 && (myGang.respectGainRate < myGang.wantedLevelGainRate * 10 || myGang.wantedLevel > myGang.respect)
+    const wantToReduceWanted =
+      myGang.wantedLevel > 1 &&
+      ((myGang.respectGainRate < myGang.wantedLevelGainRate * 10 && myGang.wantedLevelGainRate) || myGang.wantedLevel > myGang.respect)
 
     let gangMembersTaskTargets = {
       wanted: 0,

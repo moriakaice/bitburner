@@ -244,7 +244,9 @@ export async function main(ns) {
         ns.gang.setMemberTask(gangMemberName, 'Traffick Illegal Arms')
         gangMembersTaskTargets.traffick -= 1
       } else {
-        if (isTerrorismRisky) {
+        if (gangMemberNames.length < 30 && getMemberAbilities(ns, gangMemberName).str > 20 && getMemberAbilities(ns, gangMemberName).str < 120) {
+          ns.gang.setMemberTask(gangMemberName, 'Mug People')
+        } else if (isTerrorismRisky) {
           if (getMemberAbilities(ns, gangMemberName).str > 120) {
             ns.gang.setMemberTask(gangMemberName, 'Strongarm Civilians')
           } else if (getMemberAbilities(ns, gangMemberName).str > 20) {

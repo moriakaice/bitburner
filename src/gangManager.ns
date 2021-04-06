@@ -131,7 +131,7 @@ export async function main(ns) {
         }
 
         if (boughtEquipment) {
-          ns.tprint(`[${localeHHMMSS()}] Bought ${equipment.name} (${equipment.type}) for ${gangMemberName}`)
+          ns.print(`[${localeHHMMSS()}] Bought ${equipment.name} (${equipment.type}) for ${gangMemberName}`)
         }
       })
 
@@ -168,8 +168,10 @@ export async function main(ns) {
       traffick: 0,
     }
 
+    const terrorismDividerRate = myGang.wantedLevel > myGang.respect || myGang.respect < 2500000 ? 2 : 4
+
     gangMembersTaskTargets.wanted = wantToReduceWanted ? Math.ceil(gangMemberNames.length / 3) : 0
-    gangMembersTaskTargets.terrorism = Math.max(0, Math.ceil((gangMemberNames.length - gangMembersTaskTargets.wanted) / 2))
+    gangMembersTaskTargets.terrorism = Math.max(0, Math.ceil((gangMemberNames.length - gangMembersTaskTargets.wanted) / terrorismDividerRate))
     gangMembersTaskTargets.traffick = Math.max(0, gangMemberNames.length - gangMembersTaskTargets.wanted - gangMembersTaskTargets.terrorism)
 
     gangMemberNames.sort((a, b) => {

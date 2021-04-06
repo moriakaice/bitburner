@@ -240,20 +240,22 @@ export async function main(ns) {
       } else if (!isTerrorismRisky && gangMembersTaskTargets.terrorism > 0) {
         ns.gang.setMemberTask(gangMemberName, 'Terrorism')
         gangMembersTaskTargets.terrorism -= 1
-      } else if (terrorismAbilities >= 620 && gangMembersTaskTargets.traffick > 0) {
+      } else if (terrorismAbilities >= 700 && gangMembersTaskTargets.traffick > 0) {
         ns.gang.setMemberTask(gangMemberName, 'Traffick Illegal Arms')
         gangMembersTaskTargets.traffick -= 1
       } else {
-        if (gangMemberNames.length < 30 && getMemberAbilities(ns, gangMemberName).str > 150) {
-          ns.gang.setMemberTask(gangMemberName, 'Strongarm Civilians')
-        } else if (gangMemberNames.length < 30 && getMemberAbilities(ns, gangMemberName).str > 20) {
-          ns.gang.setMemberTask(gangMemberName, 'Mug People')
-        } else if (!isTerrorismRisky) {
+        if (isTerrorismRisky) {
+          if (getMemberAbilities(ns, gangMemberName).str > 120) {
+            ns.gang.setMemberTask(gangMemberName, 'Strongarm Civilians')
+          } else if (getMemberAbilities(ns, gangMemberName).str > 20) {
+            ns.gang.setMemberTask(gangMemberName, 'Mug People')
+          } else {
+            ns.gang.setMemberTask(gangMemberName, 'Vigilante Justice')
+            gangMembersTaskTargets.wanted -= 1
+          }
+        } else {
           ns.gang.setMemberTask(gangMemberName, 'Terrorism')
           gangMembersTaskTargets.terrorism -= 1
-        } else {
-          ns.gang.setMemberTask(gangMemberName, 'Vigilante Justice')
-          gangMembersTaskTargets.wanted -= 1
         }
       }
     })

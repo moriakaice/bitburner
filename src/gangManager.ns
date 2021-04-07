@@ -109,6 +109,63 @@ function getMemberAbilities(ns, name) {
   return { terrorismAbilities, vigilantieAbilities, str: gangMemberInfo.str }
 }
 
+const SORT_TYPES = {
+  VIGILANTIE: 'Vigilantie',
+  TERRORISM: 'Terrorism',
+  REPUTATION: 'Reputation',
+  STR: 'Strength',
+  STR_MULT: 'Strength Multiplier',
+  STR_ASC_MULT: 'Strength Ascencion Multiplier',
+}
+const DIRECTIONS = {
+  ASC: 'Ascending',
+  DESC: 'Descending',
+}
+function sortBy(ns, sortType = null, direction = DIRECTIONS.ASC) {
+  return function (a, b) {
+    const memberInfoA = getMemberInformation(ns, a)
+    const memberInfoB = getMemberInformation(ns, b)
+
+    let statA
+    let statB
+
+    if (sortType === SORT_TYPES.VIGILANTIE) {
+      statA = memberInfoA.hack + memberInfoA.str + memberInfoA.def + memberInfoA.dex + memberInfoA.agi
+      statB = memberInfoB.hack + memberInfoB.str + memberInfoB.def + memberInfoB.dex + memberInfoB.agi
+    } else if (sortType === SORT_TYPES.TERRORISM) {
+      statA = memberInfoA.hack + memberInfoA.str + memberInfoA.def + memberInfoA.dex + memberInfoA.cha
+      statB = memberInfoB.hack + memberInfoB.str + memberInfoB.def + memberInfoB.dex + memberInfoB.cha
+    } else if (sortType === SORT_TYPES.REPUTATION) {
+      statA = memberInfoA.earnedRespect
+      statB = memberInfoB.earnedRespect
+    } else if (sortType === SORT_TYPES.STR) {
+      statA = memberInfoA.str
+      statB = memberInfoB.str
+    } else if (sortType === SORT_TYPES.STR_MULT) {
+      statA = memberInfoA.str_mult
+      statB = memberInfoB.str_mult
+    } else if (sortType === SORT_TYPES.STR_ASC_MULT) {
+      statA = memberInfoA.str_asc_mult
+      statB = memberInfoB.str_asc_mult
+    } else {
+      const indexA = gangMemberNamesList.findIndex((name) => name === memberInfoA.name)
+      const indexB = gangMemberNamesList.findIndex((name) => name === memberInfoB.name)
+
+      return indexA - indexB
+    }
+
+    if (statA === statB) {
+      return 0
+    }
+
+    if (direction === DIRECTIONS.ASC) {
+      return statA - statB
+    } else {
+      return statB - statA
+    }
+  }
+}
+
 export async function main(ns) {
   ns.disableLog('ALL')
   ns.tprint(`[${localeHHMMSS()}] Starting gangManager.ns`)
@@ -130,7 +187,6 @@ export async function main(ns) {
     setItem(settings.keys.strAscMultHardLimit, strengthAscensionMultHardLimit)
 
     const equipmentsToBuy = getEquipmentsToBuy(ns)
-    const gangMembersToAscend = []
 
     while (ns.gang.canRecruitMember()) {
       const gangMemberNames = getMemberNames(ns)
@@ -141,19 +197,13 @@ export async function main(ns) {
 
     const gangMemberNames = getMemberNames(ns)
 
-    let strengthAscensionMultExpectation = 0
-    gangMemberNames.forEach((gangMemberName) => {
-      const gangMemberInfo = getMemberInformation(ns, gangMemberName)
-
-      strengthAscensionMultExpectation = Math.min(strengthAscensionMultExpectation, gangMemberInfo.str_asc_mult)
-    })
-
-    strengthAscensionMultExpectation = Math.max(0, strengthAscensionMultExpectation) + 2
-    strengthAscensionMultExpectation = Math.min(strengthAscensionMultExpectation, strengthAscensionMultHardLimit)
+    gangMemberNames
+      .sort(sortBy(ns, SORT_TYPES.STR, DIRECTIONS.DESC))
+      .sort(sortBy(ns, SORT_TYPES.STR_MULT, DIRECTIONS.DESC))
+      .sort(sortBy(ns, SORT_TYPES.STR_ASC_MULT, DIRECTIONS.DESC))
 
     gangMemberNames.forEach((gangMemberName) => {
       const gangMemberInfo = getMemberInformation(ns, gangMemberName)
-      let hasAllEquipment = true
 
       if (buyEquipment) {
         equipmentsToBuy.forEach((equipment) => {
@@ -162,30 +212,42 @@ export async function main(ns) {
 
           const boughtEquipment = ns.gang.purchaseEquipment(gangMemberName, equipment.name)
 
-          if (equipment.type !== 'Augmentation') {
-            hasAllEquipment = false
-          }
-
           if (boughtEquipment) {
             ns.print(`[${localeHHMMSS()}] Bought ${equipment.name} (${equipment.type}) for ${gangMemberName}`)
           }
         })
-
-        if (hasAllEquipment && gangMemberInfo.str_asc_mult < strengthAscensionMultExpectation) {
-          gangMembersToAscend.push(gangMemberName)
-        }
       }
     })
 
-    if (new Date().getTime() > nextAscensionAttempt) {
-      if (doAscension && gangMemberNames.length === 30) {
-        gangMembersToAscend
-          .sort((a, b) => {
-            const earnedRespectA = getMemberInformation(ns, a).earnedRespect
-            const earnedRespectB = getMemberInformation(ns, b).earnedRespect
+    if (gangMemberNames.length && new Date().getTime() > nextAscensionAttempt) {
+      if (doAscension) {
+        let strengthAscensionMultExpectation = 0
+        let minimumStrengthAscensionMult = Infinity
+        gangMemberNames.forEach((gangMemberName) => {
+          const gangMemberInfo = getMemberInformation(ns, gangMemberName)
 
-            return earnedRespectA - earnedRespectB
-          })
+          minimumStrengthAscensionMult = Math.min(minimumStrengthAscensionMult, gangMemberInfo.str_asc_mult)
+        })
+
+        strengthAscensionMultExpectation = Math.max(0, minimumStrengthAscensionMult) + 2
+        strengthAscensionMultExpectation = Math.min(strengthAscensionMultExpectation, strengthAscensionMultHardLimit)
+
+        const isEarlyAscension = minimumStrengthAscensionMult < 2 ? true : false
+        const gangMembersToAscend = []
+
+        const nonAugmentationEquipments = equipmentsToBuy.filter((equipment) => equipment.type !== 'Augmentation')
+
+        gangMemberNames.forEach((gangMemberName) => {
+          const gangMemberInfo = getMemberInformation(ns, gangMemberName)
+          const boughtEquipment = nonAugmentationEquipments.filter((equipment) => gangMemberInfo.upgrades.includes(equipment.name))
+
+          if ((isEarlyAscension && boughtEquipment.length > 10) || boughtEquipment.length === nonAugmentationEquipments) {
+            gangMembersToAscend.push(gangMemberName)
+          }
+        })
+
+        gangMembersToAscend
+          .sort(sortBy(ns, SORT_TYPES.REPUTATION, DIRECTIONS.ASC))
           .slice(0, Math.ceil(gangMembersToAscend.length / 3))
           .forEach((gangMemberName) => {
             ns.gang.ascendMember(gangMemberName)
@@ -197,9 +259,10 @@ export async function main(ns) {
     }
 
     const myGang = getMyGangInformation(ns)
+    const minimumWanted = 10
     const wantedToRespectRatio = 10
     const wantToReduceWanted =
-      myGang.wantedLevel > 1 &&
+      myGang.wantedLevel > minimumWanted &&
       ((myGang.respectGainRate < myGang.wantedLevelGainRate * wantedToRespectRatio && myGang.wantedLevelGainRate) ||
         myGang.wantedLevel * wantedToRespectRatio > myGang.respect)
 
@@ -215,20 +278,7 @@ export async function main(ns) {
     gangMembersTaskTargets.terrorism = Math.max(0, Math.ceil((gangMemberNames.length - gangMembersTaskTargets.wanted) / terrorismDividerRate))
     gangMembersTaskTargets.traffick = Math.max(0, gangMemberNames.length - gangMembersTaskTargets.wanted - gangMembersTaskTargets.terrorism)
 
-    gangMemberNames.sort((a, b) => {
-      const memberAbilitiesA = getMemberAbilities(ns, a)
-      const memberAbilitiesB = getMemberAbilities(ns, b)
-
-      if (gangMembersTaskTargets.wanted > 0) {
-        if (memberAbilitiesA.vigilantieAbilities !== memberAbilitiesB.vigilantieAbilities) {
-          return memberAbilitiesB.vigilantieAbilities - memberAbilitiesA.vigilantieAbilities
-        }
-
-        return memberAbilitiesB.terrorismAbilities - memberAbilitiesA.terrorismAbilities
-      }
-
-      return memberAbilitiesA.terrorismAbilities - memberAbilitiesB.terrorismAbilities
-    })
+    gangMemberNames.sort(sortBy(ns, SORT_TYPES.TERRORISM, DIRECTIONS.DESC)).sort(sortBy(ns, SORT_TYPES.VIGILANTIE, DIRECTIONS.DESC))
 
     gangMemberNames.forEach((gangMemberName) => {
       const terrorismAbilities = getMemberAbilities(ns, gangMemberName).terrorismAbilities

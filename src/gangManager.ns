@@ -239,10 +239,12 @@ export async function main(ns) {
 
         gangMemberNames.forEach((gangMemberName) => {
           const gangMemberInfo = getMemberInformation(ns, gangMemberName)
-          const boughtEquipment = nonAugmentationEquipments.filter((equipment) => gangMemberInfo.upgrades.includes(equipment.name))
+          if (gangMemberInfo.str_asc_mult < strengthAscensionMultExpectation) {
+            const boughtEquipment = nonAugmentationEquipments.filter((equipment) => gangMemberInfo.upgrades.includes(equipment.name))
 
-          if ((isEarlyAscension && boughtEquipment.length > 10) || boughtEquipment.length === nonAugmentationEquipments) {
-            gangMembersToAscend.push(gangMemberName)
+            if ((isEarlyAscension && boughtEquipment.length > 10) || boughtEquipment.length === nonAugmentationEquipments) {
+              gangMembersToAscend.push(gangMemberName)
+            }
           }
         })
 

@@ -3,6 +3,8 @@ const settings = {
     buyEquipment: 'BB_BUY_EQUIPMENT',
     doAscension: 'BB_DO_ASCENSION',
     strAscMultHardLimit: 'BB_STR_ASC_MULT_HARD_LIMIT',
+    equipmentList: 'BB_EQUIPMENT_LIST',
+    augumentationList: 'BB_AUGUMENTATION_LIST',
   },
 }
 
@@ -69,36 +71,6 @@ function getMemberNames(ns) {
 
 function getMemberInformation(ns, name) {
   return ns.gang.getMemberInformation(name)
-}
-
-function getEquipmentsToBuy(ns) {
-  const desirableAugs = [
-    'Bionic Arms',
-    'Bionic Legs',
-    'Bionic Spine',
-    'BrachiBlades',
-    'Nanofiber Weave',
-    'Synthetic Heart',
-    'Synfibril Muscle',
-    'Graphene Bone Lacings',
-  ]
-
-  return ns.gang
-    .getEquipmentNames()
-    .filter((equipmentName) => {
-      return ns.gang.getEquipmentType(equipmentName) != 'Augmentation' || desirableAugs.includes(equipmentName)
-    })
-    .map((equipmentName) => {
-      const type = ns.gang.getEquipmentType(equipmentName)
-
-      return {
-        name: equipmentName,
-        type,
-      }
-    })
-    .sort(
-      (a, b) => equipmentTypes.findIndex((equipmentType) => equipmentType === a.type) - equipmentTypes.findIndex((equipmentType) => equipmentType === b.type)
-    )
 }
 
 function getMemberAbilities(ns, name) {
@@ -186,7 +158,8 @@ export async function main(ns) {
     setItem(settings.keys.buyEquipment, buyEquipment)
     setItem(settings.keys.strAscMultHardLimit, strengthAscensionMultHardLimit)
 
-    const equipmentsToBuy = getEquipmentsToBuy(ns)
+    const equipmentsToBuy = getItem(settings.keys.equipmentList) || []
+    const augumentationssToBuy = getItem(settings.keys.augumentationList) || []
 
     while (ns.gang.canRecruitMember()) {
       const gangMemberNames = getMemberNames(ns)
@@ -202,22 +175,65 @@ export async function main(ns) {
       .sort(sortBy(ns, SORT_TYPES.STR_MULT, DIRECTIONS.DESC))
       .sort(sortBy(ns, SORT_TYPES.STR_ASC_MULT, DIRECTIONS.DESC))
 
-    gangMemberNames.forEach((gangMemberName) => {
-      const gangMemberInfo = getMemberInformation(ns, gangMemberName)
+    if (buyEquipment) {
+      let hasAllEq = true
 
-      if (buyEquipment) {
+      gangMemberNames.forEach((gangMemberName) => {
+        const gangMemberInfo = getMemberInformation(ns, gangMemberName)
+
         equipmentsToBuy.forEach((equipment) => {
           if (gangMemberInfo.upgrades.includes(equipment.name)) return
-          if (gangMemberInfo.augmentations.includes(equipment.name)) return
 
           const boughtEquipment = ns.gang.purchaseEquipment(gangMemberName, equipment.name)
 
           if (boughtEquipment) {
             ns.print(`[${localeHHMMSS()}] Bought ${equipment.name} (${equipment.type}) for ${gangMemberName}`)
+          } else {
+            hasAllEq = false
           }
         })
+      })
+
+      if (hasAllEq) {
+        let hasAllNonHackAug = true
+
+        gangMemberNames.forEach((gangMemberName) => {
+          const gangMemberInfo = getMemberInformation(ns, gangMemberName)
+
+          augumentationssToBuy
+            .filter((aug) => !aug.hack)
+            .forEach((equipment) => {
+              if (gangMemberInfo.augmentations.includes(equipment.name)) return
+
+              const boughtEquipment = ns.gang.purchaseEquipment(gangMemberName, equipment.name)
+
+              if (boughtEquipment) {
+                ns.print(`[${localeHHMMSS()}] Bought ${equipment.name} (${equipment.type}) for ${gangMemberName}`)
+              } else {
+                hasAllNonHackAug = false
+              }
+            })
+        })
+
+        if (hasAllNonHackAug) {
+          gangMemberNames.forEach((gangMemberName) => {
+            const gangMemberInfo = getMemberInformation(ns, gangMemberName)
+
+            augumentationssToBuy
+              .filter((aug) => aug.hack)
+              .forEach((equipment) => {
+                if (gangMemberInfo.augmentations.includes(equipment.name)) return
+
+                const boughtEquipment = ns.gang.purchaseEquipment(gangMemberName, equipment.name)
+
+                if (boughtEquipment) {
+                  ns.print(`[${localeHHMMSS()}] Bought ${equipment.name} (${equipment.type}) for ${gangMemberName}`)
+                }
+              })
+          })
+        }
       }
-    })
+    }
 
     if (gangMemberNames.length && new Date().getTime() > nextAscensionAttempt) {
       if (doAscension) {
@@ -235,14 +251,12 @@ export async function main(ns) {
         const isEarlyAscension = minimumStrengthAscensionMult < 2 ? true : false
         const gangMembersToAscend = []
 
-        const nonAugmentationEquipments = equipmentsToBuy.filter((equipment) => equipment.type !== 'Augmentation')
-
         gangMemberNames.forEach((gangMemberName) => {
           const gangMemberInfo = getMemberInformation(ns, gangMemberName)
           if (gangMemberInfo.str_asc_mult < strengthAscensionMultExpectation) {
-            const boughtEquipment = nonAugmentationEquipments.filter((equipment) => gangMemberInfo.upgrades.includes(equipment.name))
+            const boughtEquipment = equipmentsToBuy.filter((equipment) => gangMemberInfo.upgrades.includes(equipment.name))
 
-            if ((isEarlyAscension && boughtEquipment.length > 10) || boughtEquipment.length === nonAugmentationEquipments) {
+            if ((isEarlyAscension && boughtEquipment.length > 10) || boughtEquipment.length === equipmentsToBuy.length) {
               gangMembersToAscend.push(gangMemberName)
             }
           }

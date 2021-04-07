@@ -687,7 +687,6 @@ export async function main(ns) {
             hostname,
             type: ns.codingcontract.getContractType(contract, hostname),
             data: ns.codingcontract.getData(contract, hostname),
-            numTriesRemaining: ns.codingcontract.getNumTriesRemaining(contract, hostname),
           }
 
           contractsDb.push(contractData)
@@ -702,16 +701,12 @@ export async function main(ns) {
       const answer = findAnswer(contract)
 
       if (answer != null) {
-        if (contract.numTriesRemaining > 2) {
-          const solvingResult = ns.codingcontract.attempt(answer, contract.contract, contract.hostname, { returnReward: true })
+        const solvingResult = ns.codingcontract.attempt(answer, contract.contract, contract.hostname, { returnReward: true })
 
-          if (solvingResult) {
-            ns.tprint(`[${localeHHMMSS()}] Solved ${contract.contract} on ${contract.hostname}. ${solvingResult}`)
-          } else {
-            ns.tprint(`[${localeHHMMSS()}] Wrong answer for ${contract.contract} on ${contract.hostname}`)
-          }
+        if (solvingResult) {
+          ns.tprint(`[${localeHHMMSS()}] Solved ${contract.contract} on ${contract.hostname}. ${solvingResult}`)
         } else {
-          ns.tprint(`[${localeHHMMSS()}] ${contract.contract} on ${contract.hostname}: possible answer: ${JSON.stringify(answer)}`)
+          ns.tprint(`[${localeHHMMSS()}] Wrong answer for ${contract.contract} on ${contract.hostname}`)
         }
       } else {
         ns.tprint(`[${localeHHMMSS()}] Unable to find the answer for: ${JSON.stringify(contract)}`)

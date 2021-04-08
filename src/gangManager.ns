@@ -262,9 +262,10 @@ export async function main(ns) {
           }
         })
 
+        const maxMembersToAscend = Math.min(5, Math.ceil(gangMemberNames.length / 3))
         gangMembersToAscend
           .sort(sortBy(ns, SORT_TYPES.REPUTATION, DIRECTIONS.ASC))
-          .slice(0, Math.ceil(gangMembersToAscend.length / 3))
+          .slice(0, maxMembersToAscend)
           .forEach((gangMemberName) => {
             ns.gang.ascendMember(gangMemberName)
             ns.tprint(`[${localeHHMMSS()}] Ascended ${gangMemberName}`)

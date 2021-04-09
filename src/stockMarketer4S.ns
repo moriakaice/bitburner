@@ -1,0 +1,147 @@
+let stocksToTrade
+let stockSymbols
+let corpus
+
+function localeHHMMSS(ms = 0) {
+  if (!ms) {
+    ms = new Date().getTime()
+  }
+
+  return new Date(ms).toLocaleTimeString()
+}
+
+function getMoney(ns) {
+  return ns.getServerMoneyAvailable('home') - 300000
+}
+
+function processTick(ns, stockSymbol) {
+  ns.print(`[${localeHHMMSS()}][${stockSymbol}] Processing tick`)
+  const minimumMoneyToInvest = 1000000
+
+  let stockInfo = getStockInfo(ns, stockSymbol)
+
+  // Sale shorts if going up
+  if (stockInfo.position === 'Long' && stockInfo.sharesShort) {
+    const shortSellValue = ns.sellShort(stockSymbol, stockInfo.sharesShort)
+    if (shortSellValue) {
+      corpus += stockInfo.sharesShort * (stockInfo.avgPriceShort - shortSellValue) - 200000
+      ns.print(
+        `[${localeHHMMSS()}][${stockSymbol}] Sold ${stockInfo.sharesShort} shorts for ${ns.nFormat(shortSellValue, '$0.000a')}. Profit: ${ns.nFormat(
+          stockInfo.sharesLong * (stockInfo.avgPriceShort - shortSellValue) - 200000,
+          '$0.000a'
+        )}`
+      )
+    }
+  }
+
+  // Sale longs if going down
+  if (stockInfo.position === 'Short' && stockInfo.sharesLong) {
+    const longSellValue = ns.sellStock(stockSymbol, stockInfo.sharesLong)
+    if (longSellValue) {
+      corpus += stockInfo.sharesLong * (longSellValue - stockInfo.avgPriceLong) - 200000
+      ns.print(
+        `[${localeHHMMSS()}][${stockSymbol}] Sold ${stockInfo.sharesLong} longs for ${ns.nFormat(longSellValue, '$0.000a')}. Profit: ${ns.nFormat(
+          stockInfo.sharesLong * (longSellValue - stockInfo.avgPriceLong) - 200000,
+          '$0.000a'
+        )}`
+      )
+    }
+  }
+
+  stockInfo = getStockInfo(ns, stockSymbol)
+
+  if (!stockInfo.haveMaxShares && getMoney(ns) > minimumMoneyToInvest) {
+    if (stockInfo.position === 'Long') {
+      const maxSharesToBuy = stockInfo.maxShares - stockInfo.sharesLong
+      const sharesToBuy = Math.min(maxSharesToBuy, Math.floor(getMoney(ns) / stockInfo.stockAskPrice))
+      const longBuyValue = ns.buyStock(stockSymbol, sharesToBuy)
+      ns.print(`[${localeHHMMSS()}][${stockSymbol}] Bought ${sharesToBuy} longs for ${ns.nFormat(longBuyValue, '$0.000a')}.`)
+    } else {
+      const maxSharesToBuy = stockInfo.maxShares - stockInfo.sharesShort
+      const sharesToBuy = Math.min(maxSharesToBuy, Math.floor(getMoney(ns) / stockInfo.stockBidPrice))
+      const shortBuyValue = ns.shortStock(stockSymbol, sharesToBuy)
+      ns.print(`[${localeHHMMSS()}][${stockSymbol}] Bought ${sharesToBuy} shorts for ${ns.nFormat(shortBuyValue, '$0.000a')}.`)
+    }
+  }
+}
+
+function getStockInfo(ns, stockSymbol) {
+  const [sharesLong, avgPriceLong, sharesShort, avgPriceShort] = ns.getStockPosition(stockSymbol)
+  const volatility = ns.getStockVolatility(stockSymbol)
+  const probability = ns.getStockForecast(stockSymbol) - 0.5
+  const expectedReturn = Math.abs(volatility * probability)
+  const maxShares = ns.getStockMaxShares(stockSymbol)
+
+  const haveAnyShares = sharesLong + sharesShort > 0
+  const haveMaxShares = sharesLong + sharesShort === maxShares
+
+  const stockAskPrice = ns.getStockAskPrice(stockSymbol)
+  const stockBidPrice = ns.getStockBidPrice(stockSymbol)
+
+  const position = probability >= 0 ? 'Long' : 'Short'
+
+  return {
+    stockSymbol,
+    maxShares,
+    haveAnyShares,
+    haveMaxShares,
+    sharesLong,
+    avgPriceLong,
+    stockAskPrice,
+    sharesShort,
+    avgPriceShort,
+    stockBidPrice,
+    volatility,
+    probability,
+    expectedReturn,
+    position,
+  }
+}
+
+export async function main(ns) {
+  ns.disableLog('ALL')
+  let tickCounter = 1
+
+  stockSymbols = ns.getStockSymbols()
+
+  corpus = ns.getServerMoneyAvailable('home') - 1000000
+  stockSymbols.forEach((stockSymbol) => {
+    const stockInfo = getStockInfo(ns, stockSymbol)
+
+    corpus += stockInfo.sharesLong * stockInfo.avgPriceLong + stockInfo.sharesShort * stockInfo.avgPriceShort
+  })
+  const startingCorpus = corpus
+
+  while (true) {
+    ns.clearLog()
+    ns.print(`[${localeHHMMSS()}] Tick counter: ${tickCounter}, corpus: ${ns.nFormat(corpus, '$0.000a')}`)
+    ns.print(`[${localeHHMMSS()}] Starting corpus: ${ns.nFormat(startingCorpus, '$0.000a')}`)
+
+    stockSymbols.sort((a, b) => {
+      const stockA = getStockInfo(ns, a)
+      const stockB = getStockInfo(ns, b)
+
+      if (stockB.sharesLong + stockB.sharesShort === stockA.sharesLong + stockA.sharesShort) {
+        if (Math.abs(stockA.probability) !== Math.abs(stockB.probability)) {
+          return Math.abs(stockB.probability) - Math.abs(stockA.probability)
+        } else {
+          return stockB.expectedReturn - stockA.expectedReturn
+        }
+      }
+
+      return stockB.sharesLong + stockB.sharesShort - (stockA.sharesLong + stockA.sharesShort)
+    })
+
+    stocksToTrade = Math.min(stockSymbols.filter((stockSymbol) => getStockInfo(ns, stockSymbol).haveMaxShares).length + 1, stockSymbols.length)
+
+    for (let i = 0; i < stocksToTrade; i++) {
+      const stockSymbol = stockSymbols[i]
+      processTick(ns, stockSymbol)
+      await ns.sleep(1)
+    }
+
+    ns.print(`[${localeHHMMSS()}] After transactions: corpus: ${ns.nFormat(corpus, '$0.000a')}`)
+    await ns.sleep(6001 - stocksToTrade)
+    tickCounter++
+  }
+}

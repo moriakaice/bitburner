@@ -1,6 +1,7 @@
-let stocksToTrade
 let stockSymbols
 let corpus
+let underperformingShares
+const commission = 100000
 
 function localeHHMMSS(ms = 0) {
   if (!ms) {
@@ -11,56 +12,95 @@ function localeHHMMSS(ms = 0) {
 }
 
 function getMoney(ns) {
-  return ns.getServerMoneyAvailable('home') - 300000
+  return ns.getServerMoneyAvailable('home') - 5 * commission
 }
 
-function processTick(ns, stockSymbol) {
-  ns.print(`[${localeHHMMSS()}][${stockSymbol}] Processing tick`)
-  const minimumMoneyToInvest = 1000000
+function sellShorts(ns, stockSymbol) {
+  const stockInfo = getStockInfo(ns, stockSymbol)
+  const shortSellValue = ns.sellShort(stockSymbol, stockInfo.sharesShort)
 
-  let stockInfo = getStockInfo(ns, stockSymbol)
+  if (shortSellValue) {
+    corpus += stockInfo.sharesShort * (stockInfo.avgPriceShort - shortSellValue) - 2 * commission
+    ns.print(
+      `[${localeHHMMSS()}][${stockSymbol}] Sold ${stockInfo.sharesShort} shorts for ${ns.nFormat(shortSellValue, '$0.000a')}. Profit: ${ns.nFormat(
+        stockInfo.sharesLong * (stockInfo.avgPriceShort - shortSellValue) - 2 * commission,
+        '$0.000a'
+      )}`
+    )
+  }
+}
 
-  // Sale shorts if going up
+function sellLongs(ns, stockSymbol) {
+  const stockInfo = getStockInfo(ns, stockSymbol)
+  const longSellValue = ns.sellStock(stockSymbol, stockInfo.sharesLong)
+
+  if (longSellValue) {
+    corpus += stockInfo.sharesLong * (longSellValue - stockInfo.avgPriceLong) - 2 * commission
+    ns.print(
+      `[${localeHHMMSS()}][${stockSymbol}] Sold ${stockInfo.sharesLong} longs for ${ns.nFormat(longSellValue, '$0.000a')}. Profit: ${ns.nFormat(
+        stockInfo.sharesLong * (longSellValue - stockInfo.avgPriceLong) - 2 * commission,
+        '$0.000a'
+      )}`
+    )
+  }
+}
+
+// Only if not going to lose money
+function sellUnderperforming(ns, stockSymbol) {
+  const stockInfo = getStockInfo(ns, stockSymbol)
+
+  if (stockInfo.sharesShort && stockInfo.sharesShort * (stockInfo.avgPriceShort - stockInfo.stockAskPrice) > 2 * commission) {
+    sellShorts(ns, stockSymbol)
+  }
+
+  if (stockInfo.sharesLong && stockInfo.sharesLong * (stockInfo.stockBidPrice - stockInfo.avgPriceLong) > 2 * commission) {
+    sellLongs(ns, stockSymbol)
+  }
+}
+
+function sellWrongPosition(ns, stockSymbol) {
+  const stockInfo = getStockInfo(ns, stockSymbol)
+
+  // Sell shorts if going up
   if (stockInfo.position === 'Long' && stockInfo.sharesShort) {
-    const shortSellValue = ns.sellShort(stockSymbol, stockInfo.sharesShort)
-    if (shortSellValue) {
-      corpus += stockInfo.sharesShort * (stockInfo.avgPriceShort - shortSellValue) - 200000
-      ns.print(
-        `[${localeHHMMSS()}][${stockSymbol}] Sold ${stockInfo.sharesShort} shorts for ${ns.nFormat(shortSellValue, '$0.000a')}. Profit: ${ns.nFormat(
-          stockInfo.sharesLong * (stockInfo.avgPriceShort - shortSellValue) - 200000,
-          '$0.000a'
-        )}`
-      )
-    }
+    sellShorts(ns, stockSymbol)
   }
 
-  // Sale longs if going down
+  // Sell longs if going down
   if (stockInfo.position === 'Short' && stockInfo.sharesLong) {
-    const longSellValue = ns.sellStock(stockSymbol, stockInfo.sharesLong)
-    if (longSellValue) {
-      corpus += stockInfo.sharesLong * (longSellValue - stockInfo.avgPriceLong) - 200000
-      ns.print(
-        `[${localeHHMMSS()}][${stockSymbol}] Sold ${stockInfo.sharesLong} longs for ${ns.nFormat(longSellValue, '$0.000a')}. Profit: ${ns.nFormat(
-          stockInfo.sharesLong * (longSellValue - stockInfo.avgPriceLong) - 200000,
-          '$0.000a'
-        )}`
-      )
-    }
+    sellLongs(ns, stockSymbol)
   }
+}
 
-  stockInfo = getStockInfo(ns, stockSymbol)
+function buyNewShares(ns, stockSymbol) {
+  const stockInfo = getStockInfo(ns, stockSymbol)
+  const minimumMoneyToInvest = 10 * commission
 
   if (!stockInfo.haveMaxShares && getMoney(ns) > minimumMoneyToInvest) {
+    let maxSharesToBuy
+    let sharesToBuy
+    let buyValue
+    let shareType
+
     if (stockInfo.position === 'Long') {
-      const maxSharesToBuy = stockInfo.maxShares - stockInfo.sharesLong
-      const sharesToBuy = Math.min(maxSharesToBuy, Math.floor(getMoney(ns) / stockInfo.stockAskPrice))
-      const longBuyValue = ns.buyStock(stockSymbol, sharesToBuy)
-      ns.print(`[${localeHHMMSS()}][${stockSymbol}] Bought ${sharesToBuy} longs for ${ns.nFormat(longBuyValue, '$0.000a')}.`)
+      maxSharesToBuy = stockInfo.maxShares - stockInfo.sharesLong
+      sharesToBuy = Math.max(0, Math.min(maxSharesToBuy, Math.floor(getMoney(ns) / stockInfo.stockAskPrice)))
+      if (sharesToBuy) {
+        buyValue = ns.buyStock(stockSymbol, sharesToBuy)
+      }
+      shareType = 'longs'
     } else {
-      const maxSharesToBuy = stockInfo.maxShares - stockInfo.sharesShort
-      const sharesToBuy = Math.min(maxSharesToBuy, Math.floor(getMoney(ns) / stockInfo.stockBidPrice))
-      const shortBuyValue = ns.shortStock(stockSymbol, sharesToBuy)
-      ns.print(`[${localeHHMMSS()}][${stockSymbol}] Bought ${sharesToBuy} shorts for ${ns.nFormat(shortBuyValue, '$0.000a')}.`)
+      maxSharesToBuy = stockInfo.maxShares - stockInfo.sharesShort
+      sharesToBuy = Math.max(0, Math.min(maxSharesToBuy, Math.floor(getMoney(ns) / stockInfo.stockBidPrice)))
+      if (sharesToBuy) {
+        buyValue = ns.shortStock(stockSymbol, sharesToBuy)
+      }
+      shareType = 'shorts'
+    }
+
+    if (sharesToBuy) {
+      const invested = ns.nFormat(buyValue * sharesToBuy, '$0.000a')
+      ns.print(`[${localeHHMMSS()}][${stockSymbol}] Bought ${sharesToBuy} ${shareType} for ${ns.nFormat(buyValue, '$0.000a')} each. Invested: ${invested}`)
     }
   }
 }
@@ -121,27 +161,27 @@ export async function main(ns) {
       const stockA = getStockInfo(ns, a)
       const stockB = getStockInfo(ns, b)
 
-      if (stockB.sharesLong + stockB.sharesShort === stockA.sharesLong + stockA.sharesShort) {
-        if (Math.abs(stockA.probability) !== Math.abs(stockB.probability)) {
-          return Math.abs(stockB.probability) - Math.abs(stockA.probability)
-        } else {
-          return stockB.expectedReturn - stockA.expectedReturn
-        }
+      if (stockB.expectedReturn === stockA.expectedReturn) {
+        return Math.abs(stockB.probability) - Math.abs(stockA.probability)
       }
 
-      return stockB.sharesLong + stockB.sharesShort - (stockA.sharesLong + stockA.sharesShort)
+      return stockB.expectedReturn - stockA.expectedReturn
     })
 
-    stocksToTrade = Math.min(stockSymbols.filter((stockSymbol) => getStockInfo(ns, stockSymbol).haveMaxShares).length + 1, stockSymbols.length)
+    stockSymbols
+      .filter((stockSymbol) => getStockInfo(ns, stockSymbol).haveAnyShares)
+      .filter((stockSymbol, index) => stockSymbol !== stockSymbols[index])
+      .forEach((stockSymbol) => sellUnderperforming(ns, stockSymbol))
+    await ns.sleep(5)
 
-    for (let i = 0; i < stocksToTrade; i++) {
-      const stockSymbol = stockSymbols[i]
-      processTick(ns, stockSymbol)
-      await ns.sleep(1)
-    }
+    stockSymbols.forEach((stockSymbol) => sellWrongPosition(ns, stockSymbol))
+    await ns.sleep(5)
+
+    stockSymbols.forEach((stockSymbol) => buyNewShares(ns, stockSymbol))
+    await ns.sleep(5)
 
     ns.print(`[${localeHHMMSS()}] After transactions: corpus: ${ns.nFormat(corpus, '$0.000a')}`)
-    await ns.sleep(6001 - stocksToTrade)
+    await ns.sleep(3500)
     tickCounter++
   }
 }

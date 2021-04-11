@@ -50,7 +50,7 @@ function processTick(ns, stockSymbol) {
         const profit = profitTracker.volume * (profitTracker.value - shortSellValue) - 200000
         corpus += profit
 
-        const message = `[${localeHHMMSS()}] ${stockSymbol}, profitPercentage: ${nFormat(profitPercentage, '0.0%')}, selling shorts,
+        const message = `[${localeHHMMSS()}] ${stockSymbol}, profitPercentage: ${ns.nFormat(profitPercentage, '0.0%')}, selling shorts,
           profitTracker.volume: ${profitTracker.volume}, profitTracker.value: ${ns.nFormat(profitTracker.value, '$0.000a')},
           shortSellValue: ${ns.nFormat(shortSellValue, '$0.000a')},
           profit: ${ns.nFormat(profit, '$0.000a')}, corpus: ${ns.nFormat(corpus, '$0.000a')}`
@@ -72,7 +72,7 @@ function processTick(ns, stockSymbol) {
         const profit = profitTracker.volume * (longSellValue - profitTracker.value) - 200000
         corpus += profit
 
-        const message = `[${localeHHMMSS()}] ${stockSymbol}, profitPercentage: ${nFormat(profitPercentage, '0.0%')}, selling longs,
+        const message = `[${localeHHMMSS()}] ${stockSymbol}, profitPercentage: ${ns.nFormat(profitPercentage, '0.0%')}, selling longs,
           profitTracker.volume: ${profitTracker.volume}, profitTracker.value: ${ns.nFormat(profitTracker.value, '$0.000a')},
           longSellValue: ${ns.nFormat(longSellValue, '$0.000a')},
           profit: ${ns.nFormat(profit, '$0.000a')}, corpus: ${ns.nFormat(corpus, '$0.000a')}`

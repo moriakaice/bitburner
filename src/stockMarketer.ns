@@ -2,6 +2,7 @@ const stockSymbols = ['ECP', 'BLD', 'OMTK', 'FSIG', 'FLCM', 'CTYS']
 const avgTrackers = {}
 const profitTrackers = {}
 const risingTrackers = {}
+const firstInvests = {}
 
 let corpus
 
@@ -120,7 +121,7 @@ function processTick(ns, stockSymbol) {
           }
         }
 
-        const moneyToInvest = Math.min(getMoney(ns), Math.floor(corpus / 6))
+        const moneyToInvest = firstInvests[stockSymbol] ? getMoney(ns) : Math.floor(corpus / 6)
         if (moneyToInvest > minimumMoneyToInvest) {
           let volume = Math.floor(moneyToInvest / ns.getStockAskPrice(stockSymbol))
           volume = Math.min(volume, ns.getStockMaxShares(stockSymbol))
@@ -141,6 +142,7 @@ function processTick(ns, stockSymbol) {
             ns.tprint(message)
 
             if (longBuyValue && volume) {
+              firstInvests[stockSymbol] = true
               profitTracker = {
                 position: 'Long',
                 value: longBuyValue,
@@ -181,7 +183,7 @@ function processTick(ns, stockSymbol) {
           }
         }
 
-        const moneyToInvest = Math.min(getMoney(ns), Math.floor(corpus / 6))
+        const moneyToInvest = firstInvests[stockSymbol] ? getMoney(ns) : Math.floor(corpus / 6)
         if (moneyToInvest > minimumMoneyToInvest) {
           let volume = Math.floor(moneyToInvest / ns.getStockBidPrice(stockSymbol))
           volume = Math.min(volume, ns.getStockMaxShares(stockSymbol))
@@ -202,6 +204,7 @@ function processTick(ns, stockSymbol) {
             ns.tprint(message)
 
             if (shortBuyValue && volume) {
+              firstInvests[stockSymbol] = true
               profitTracker = {
                 position: 'Short',
                 value: shortBuyValue,
@@ -231,6 +234,13 @@ export async function main(ns) {
   ns.disableLog('ALL')
   let tickCounter = 1
   corpus = ns.getServerMoneyAvailable('home') - 1000000
+
+  stockSymbols.forEach((stockSymbol) => {
+    const [sharesLong, avgPriceLong, sharesShort, avgPriceShort] = ns.getStockPosition(stockSymbol)
+
+    corpus += sharesLong * avgPriceLong + sharesShort * avgPriceShort
+  })
+
   ns.print(`[${localeHHMMSS()}] Tick counter: 1, corpus: ${ns.nFormat(corpus, '$0.000a')}`)
   while (true) {
     for (let i = 0; i < stockSymbols.length; i++) {

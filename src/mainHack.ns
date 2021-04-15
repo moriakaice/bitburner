@@ -208,10 +208,6 @@ export async function main(ns) {
     }
     weakenCycles = growCycles
 
-    if (hackCycles * 100 < growCycles) {
-      hackCycles *= 10
-    }
-
     ns.tprint(
       `[${localeHHMMSS()}] Selected ${bestTarget} for a target. Planning to ${action} the server. Will wake up around ${localeHHMMSS(
         new Date().getTime() + weakenTime + 300
@@ -288,10 +284,15 @@ export async function main(ns) {
     } else {
       if (hackCycles > serverExtraData[bestTarget].fullHackCycles) {
         hackCycles = serverExtraData[bestTarget].fullHackCycles
+
+        if (hackCycles * 100 < growCycles) {
+          hackCycles *= 10
+        }
+
         growCycles = Math.max(0, growCycles - Math.ceil((hackCycles * 1.7) / 1.75))
 
         weakenCycles = weakenCyclesForGrow(growCycles) + weakenCyclesForHack(hackCycles)
-        growCycles -= weakenCyclesForGrow(growCycles)
+        growCycles -= weakenCycles
         hackCycles -= Math.ceil((weakenCyclesForHack(hackCycles) * 1.75) / 1.7)
 
         growCycles = Math.max(0, growCycles)

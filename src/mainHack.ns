@@ -208,6 +208,10 @@ export async function main(ns) {
     }
     weakenCycles = growCycles
 
+    if (hackCycles * 100 < growCycles) {
+      hackCycles *= 10
+    }
+
     ns.tprint(
       `[${localeHHMMSS()}] Selected ${bestTarget} for a target. Planning to ${action} the server. Will wake up around ${localeHHMMSS(
         new Date().getTime() + weakenTime + 300

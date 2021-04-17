@@ -192,6 +192,8 @@ export async function main(ns) {
           ns.gang.ascendMember(gangMemberName)
           ascended = true
           counter += 1
+        } else {
+          ns.gang.setMemberTask(gangMemberName, 'Terrorism')
         }
       }
 
@@ -203,55 +205,119 @@ export async function main(ns) {
     await ns.sleep(1)
   }
 
-  ns.tprint(`[${localeHHMMSS()}] Finished, moving on to something less trivial`)
+  ns.tprint(`[${localeHHMMSS()}] Finished Basball Bat ascension`)
 
-  let equipmentList = ['Baseball Bat', 'Bulletproof Vest', 'Ford Flex V20', 'Katana', 'Glock 18C']
+  let myGangReputation = ns.gang.getGangInformation().respect
+  const minimumReputationToBuyDex = 1000000
 
-  gangMemberNames
-    .sort(sortBy(ns, SORT_TYPES.DEX, DIRECTIONS.DESC))
-    .sort(sortBy(ns, SORT_TYPES.DEX_MULT, DIRECTIONS.DESC))
-    .sort(sortBy(ns, SORT_TYPES.DEX_ASC_MULT, DIRECTIONS.DESC))
+  if (myGangReputation > minimumReputationToBuyDex) {
+    let equipmentList = ['Baseball Bat', 'Bulletproof Vest', 'Ford Flex V20', 'Katana', 'Glock 18C']
 
-  ns.tprint(`[${localeHHMMSS()}] Members (${gangMemberNames.length}) to check: ${gangMemberNames.join(', ')}`)
+    gangMemberNames
+      .sort(sortBy(ns, SORT_TYPES.DEX, DIRECTIONS.DESC))
+      .sort(sortBy(ns, SORT_TYPES.DEX_MULT, DIRECTIONS.DESC))
+      .sort(sortBy(ns, SORT_TYPES.DEX_ASC_MULT, DIRECTIONS.DESC))
 
-  for (let i = 0; i < gangMemberNames.length; i++) {
-    const gangMemberName = gangMemberNames[i]
-    let ascended = true
-    let counter = 0
+    ns.tprint(`[${localeHHMMSS()}] Members (${gangMemberNames.length}) to check: ${gangMemberNames.join(', ')}`)
 
-    ns.tprint(`[${localeHHMMSS()}][${gangMemberName}][${i + 1}/${gangMemberNames.length}] Starting dex ascension`)
+    for (let i = 0; i < gangMemberNames.length; i++) {
+      const gangMemberName = gangMemberNames[i]
+      let ascended = true
+      let counter = 0
 
-    while (ascended) {
-      ascended = false
+      ns.tprint(`[${localeHHMMSS()}][${gangMemberName}][${i + 1}/${gangMemberNames.length}] Starting dex ascension`)
 
-      let gangMemberInfo = getMemberInformation(ns, gangMemberName)
-      let missingEq = equipmentList.filter((equipment) => !gangMemberInfo.upgrades.includes(equipment))
+      while (ascended) {
+        ascended = false
 
-      if (missingEq.length && getMoney(ns) > 0) {
-        missingEq.forEach((equipment) => {
-          if (getMoney(ns) > 0) {
-            ns.gang.purchaseEquipment(gangMemberName, equipment)
-          }
-        })
-      }
+        let gangMemberInfo = getMemberInformation(ns, gangMemberName)
+        let missingEq = equipmentList.filter((equipment) => !gangMemberInfo.upgrades.includes(equipment))
 
-      gangMemberInfo = getMemberInformation(ns, gangMemberName)
-      missingEq = equipmentList.filter((equipment) => !gangMemberInfo.upgrades.includes(equipment))
-
-      if (!missingEq.length) {
-        if (gangMemberInfo.dex_asc_mult < strengthAscensionMultHardLimit) {
-          ns.gang.ascendMember(gangMemberName)
-          ascended = true
-          counter += 1
+        if (missingEq.length && getMoney(ns) > 0) {
+          missingEq.forEach((equipment) => {
+            if (getMoney(ns) > 0) {
+              ns.gang.purchaseEquipment(gangMemberName, equipment)
+            }
+          })
         }
+
+        gangMemberInfo = getMemberInformation(ns, gangMemberName)
+        missingEq = equipmentList.filter((equipment) => !gangMemberInfo.upgrades.includes(equipment))
+
+        if (!missingEq.length) {
+          if (gangMemberInfo.dex_asc_mult < strengthAscensionMultHardLimit) {
+            ns.gang.ascendMember(gangMemberName)
+            ascended = true
+            counter += 1
+          } else {
+            ns.gang.setMemberTask(gangMemberName, 'Terrorism')
+          }
+        }
+
+        await ns.sleep(1)
       }
+
+      ns.tprint(`[${localeHHMMSS()}][${gangMemberName}][${i + 1}/${gangMemberNames.length}] ${counter} ascensions done, moving on`)
 
       await ns.sleep(1)
     }
 
-    ns.tprint(`[${localeHHMMSS()}][${gangMemberName}][${i + 1}/${gangMemberNames.length}] ${counter} ascensions done, moving on`)
+    ns.tprint(`[${localeHHMMSS()}] Finished Dex ascension`)
+  }
 
-    await ns.sleep(1)
+  myGangReputation = ns.gang.getGangInformation().respect
+  const minimumReputationToBuyAll = 100000000
+
+  if (myGangReputation > minimumReputationToBuyAll) {
+    equipmentList = getItem(settings.keys.equipmentList) || []
+
+    gangMemberNames.sort(sortBy(ns, SORT_TYPES.REPUTATION, DIRECTIONS.ASC))
+
+    ns.tprint(`[${localeHHMMSS()}] Members (${gangMemberNames.length}) to check: ${gangMemberNames.join(', ')}`)
+
+    for (let i = 0; i < gangMemberNames.length; i++) {
+      const gangMemberName = gangMemberNames[i]
+      let ascended = true
+      let counter = 0
+
+      ns.tprint(`[${localeHHMMSS()}][${gangMemberName}][${i + 1}/${gangMemberNames.length}] Starting full ascension`)
+
+      while (ascended) {
+        ascended = false
+
+        let gangMemberInfo = getMemberInformation(ns, gangMemberName)
+        let missingEq = equipmentList.filter((equipment) => !gangMemberInfo.upgrades.includes(equipment))
+
+        if (missingEq.length && getMoney(ns) > 0) {
+          missingEq.forEach((equipment) => {
+            if (getMoney(ns) > 0) {
+              ns.gang.purchaseEquipment(gangMemberName, equipment)
+            }
+          })
+        }
+
+        gangMemberInfo = getMemberInformation(ns, gangMemberName)
+        missingEq = equipmentList.filter((equipment) => !gangMemberInfo.upgrades.includes(equipment))
+
+        if (!missingEq.length) {
+          if (gangMemberInfo.hack_asc_mult < strengthAscensionMultHardLimit) {
+            ns.gang.ascendMember(gangMemberName)
+            ascended = true
+            counter += 1
+          } else {
+            ns.gang.setMemberTask(gangMemberName, 'Terrorism')
+          }
+        }
+
+        await ns.sleep(1)
+      }
+
+      ns.tprint(`[${localeHHMMSS()}][${gangMemberName}][${i + 1}/${gangMemberNames.length}] ${counter} ascensions done, moving on`)
+
+      await ns.sleep(1)
+    }
+
+    ns.tprint(`[${localeHHMMSS()}] Finished full ascension`)
   }
 
   ns.tprint(`[${localeHHMMSS()}] Finished, exiting`)

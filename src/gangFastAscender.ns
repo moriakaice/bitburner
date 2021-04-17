@@ -269,7 +269,7 @@ export async function main(ns) {
   const minimumReputationToBuyAll = 100000000
 
   if (myGangReputation > minimumReputationToBuyAll) {
-    equipmentList = getItem(settings.keys.equipmentList) || []
+    let equipmentList = getItem(settings.keys.equipmentList) || []
 
     gangMemberNames.sort(sortBy(ns, SORT_TYPES.REPUTATION, DIRECTIONS.ASC))
 

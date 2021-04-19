@@ -208,7 +208,7 @@ export async function main(ns) {
   ns.tprint(`[${localeHHMMSS()}] Finished Basball Bat ascension`)
 
   let myGangReputation = ns.gang.getGangInformation().respect
-  const minimumReputationToBuyDex = 1000000
+  const minimumReputationToBuyDex = 50000000
 
   if (myGangReputation > minimumReputationToBuyDex) {
     let equipmentList = ['Baseball Bat', 'Bulletproof Vest', 'Ford Flex V20', 'Katana', 'Glock 18C']
@@ -220,7 +220,7 @@ export async function main(ns) {
 
     ns.tprint(`[${localeHHMMSS()}] Members (${gangMemberNames.length}) to check: ${gangMemberNames.join(', ')}`)
 
-    for (let i = 0; i < gangMemberNames.length; i++) {
+    for (let i = 0; i < gangMemberNames.length && myGangReputation > minimumReputationToBuyDex; i++) {
       const gangMemberName = gangMemberNames[i]
       let ascended = true
       let counter = 0
@@ -258,7 +258,7 @@ export async function main(ns) {
       }
 
       ns.tprint(`[${localeHHMMSS()}][${gangMemberName}][${i + 1}/${gangMemberNames.length}] ${counter} ascensions done, moving on`)
-
+      myGangReputation = ns.gang.getGangInformation().respect
       await ns.sleep(1)
     }
 
@@ -269,13 +269,35 @@ export async function main(ns) {
   const minimumReputationToBuyAll = 100000000
 
   if (myGangReputation > minimumReputationToBuyAll) {
-    let equipmentList = getItem(settings.keys.equipmentList) || []
+    let equipmentList = [
+      'Baseball Bat',
+      'Bulletproof Vest',
+      'Ford Flex V20',
+      'Full Body Armor',
+      'NUKE Rootkit',
+      'ATX1070 Superbike',
+      'Katana',
+      'Mercedes-Benz S9001',
+      'Glock 18C',
+      'Liquid Body Armor',
+      'Soulstealer Rootkit',
+      'White Ferrari',
+      'Graphene Plating Armor',
+      'Hmap Node',
+      'P90C',
+      'Steyr AUG',
+      'Demon Rootkit',
+      'Jack the Ripper',
+      'AK-47',
+      'M15A10 Assault Rifle',
+      'AWM Sniper Rifle',
+    ]
 
     gangMemberNames.sort(sortBy(ns, SORT_TYPES.REPUTATION, DIRECTIONS.ASC))
 
     ns.tprint(`[${localeHHMMSS()}] Members (${gangMemberNames.length}) to check: ${gangMemberNames.join(', ')}`)
 
-    for (let i = 0; i < gangMemberNames.length; i++) {
+    for (let i = 0; i < gangMemberNames.length && myGangReputation > minimumReputationToBuyAll; i++) {
       const gangMemberName = gangMemberNames[i]
       let ascended = true
       let counter = 0
@@ -313,7 +335,7 @@ export async function main(ns) {
       }
 
       ns.tprint(`[${localeHHMMSS()}][${gangMemberName}][${i + 1}/${gangMemberNames.length}] ${counter} ascensions done, moving on`)
-
+      myGangReputation = ns.gang.getGangInformation().respect
       await ns.sleep(1)
     }
 

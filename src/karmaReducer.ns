@@ -35,12 +35,10 @@ export async function main(ns) {
   let continueCommitingCrime = true
   const crimeToCommit = 'homicide'
 
-  const endTime = new Date().getTime() + settings.intervalToRecheck
-
   while (continueCommitingCrime) {
     const crimesStop = getItem(settings.keys.crimesStop)
 
-    if (crimesStop || new Date().getTime() > endTime) {
+    if (crimesStop) {
       continueCommitingCrime = false
     } else {
       while (ns.isBusy()) {

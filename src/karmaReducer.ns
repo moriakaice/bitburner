@@ -11,6 +11,10 @@ function getItem(key) {
   return item ? JSON.parse(item) : undefined
 }
 
+function setItem(key, value) {
+  localStorage.setItem(key, JSON.stringify(value))
+}
+
 function localeHHMMSS(ms = 0) {
   if (!ms) {
     ms = new Date().getTime()
@@ -48,4 +52,6 @@ export async function main(ns) {
       await ns.sleep(1000)
     }
   }
+
+  setItem(settings.keys.crimesStop, false)
 }

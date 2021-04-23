@@ -182,19 +182,21 @@ export async function main(ns) {
         ascended = false
 
         const gangMemberInfo = getMemberInformation(ns, gangMemberName)
-        let hasBat = gangMemberInfo.upgrades.includes(baseballBat)
+        if (gangMemberInfo.str_asc_mult < strengthAscensionMultHardLimit) {
+          let hasBat = gangMemberInfo.upgrades.includes(baseballBat)
 
-        if (!hasBat && getMoney(ns) > 0) {
-          hasBat = ns.gang.purchaseEquipment(gangMemberName, baseballBat)
-        }
+          if (!hasBat && getMoney(ns) > 0) {
+            hasBat = ns.gang.purchaseEquipment(gangMemberName, baseballBat)
+          }
 
-        if (hasBat) {
-          if (gangMemberInfo.str_asc_mult < strengthAscensionMultHardLimit) {
-            ns.gang.ascendMember(gangMemberName)
-            ascended = true
-            counter += 1
-          } else {
-            ns.gang.setMemberTask(gangMemberName, 'Terrorism')
+          if (hasBat) {
+            if (gangMemberInfo.str_asc_mult < strengthAscensionMultHardLimit) {
+              ns.gang.ascendMember(gangMemberName)
+              ascended = true
+              counter += 1
+            } else {
+              ns.gang.setMemberTask(gangMemberName, 'Terrorism')
+            }
           }
         }
 
@@ -232,26 +234,28 @@ export async function main(ns) {
           ascended = false
 
           let gangMemberInfo = getMemberInformation(ns, gangMemberName)
-          let missingEq = equipmentList.filter((equipment) => !gangMemberInfo.upgrades.includes(equipment))
+          if (gangMemberInfo.dex_asc_mult < strengthAscensionMultHardLimit) {
+            let missingEq = equipmentList.filter((equipment) => !gangMemberInfo.upgrades.includes(equipment))
 
-          if (missingEq.length && getMoney(ns) > 0) {
-            missingEq.forEach((equipment) => {
-              if (getMoney(ns) > 0) {
-                ns.gang.purchaseEquipment(gangMemberName, equipment)
+            if (missingEq.length && getMoney(ns) > 0) {
+              missingEq.forEach((equipment) => {
+                if (getMoney(ns) > 0) {
+                  ns.gang.purchaseEquipment(gangMemberName, equipment)
+                }
+              })
+            }
+
+            gangMemberInfo = getMemberInformation(ns, gangMemberName)
+            missingEq = equipmentList.filter((equipment) => !gangMemberInfo.upgrades.includes(equipment))
+
+            if (!missingEq.length) {
+              if (gangMemberInfo.dex_asc_mult < strengthAscensionMultHardLimit) {
+                ns.gang.ascendMember(gangMemberName)
+                ascended = true
+                counter += 1
+              } else {
+                ns.gang.setMemberTask(gangMemberName, 'Terrorism')
               }
-            })
-          }
-
-          gangMemberInfo = getMemberInformation(ns, gangMemberName)
-          missingEq = equipmentList.filter((equipment) => !gangMemberInfo.upgrades.includes(equipment))
-
-          if (!missingEq.length) {
-            if (gangMemberInfo.dex_asc_mult < strengthAscensionMultHardLimit) {
-              ns.gang.ascendMember(gangMemberName)
-              ascended = true
-              counter += 1
-            } else {
-              ns.gang.setMemberTask(gangMemberName, 'Terrorism')
             }
           }
 
@@ -309,26 +313,28 @@ export async function main(ns) {
           ascended = false
 
           let gangMemberInfo = getMemberInformation(ns, gangMemberName)
-          let missingEq = equipmentList.filter((equipment) => !gangMemberInfo.upgrades.includes(equipment))
+          if (gangMemberInfo.hack_asc_mult < strengthAscensionMultHardLimit) {
+            let missingEq = equipmentList.filter((equipment) => !gangMemberInfo.upgrades.includes(equipment))
 
-          if (missingEq.length && getMoney(ns) > 0) {
-            missingEq.forEach((equipment) => {
-              if (getMoney(ns) > 0) {
-                ns.gang.purchaseEquipment(gangMemberName, equipment)
+            if (missingEq.length && getMoney(ns) > 0) {
+              missingEq.forEach((equipment) => {
+                if (getMoney(ns) > 0) {
+                  ns.gang.purchaseEquipment(gangMemberName, equipment)
+                }
+              })
+            }
+
+            gangMemberInfo = getMemberInformation(ns, gangMemberName)
+            missingEq = equipmentList.filter((equipment) => !gangMemberInfo.upgrades.includes(equipment))
+
+            if (!missingEq.length) {
+              if (gangMemberInfo.hack_asc_mult < strengthAscensionMultHardLimit) {
+                ns.gang.ascendMember(gangMemberName)
+                ascended = true
+                counter += 1
+              } else {
+                ns.gang.setMemberTask(gangMemberName, 'Terrorism')
               }
-            })
-          }
-
-          gangMemberInfo = getMemberInformation(ns, gangMemberName)
-          missingEq = equipmentList.filter((equipment) => !gangMemberInfo.upgrades.includes(equipment))
-
-          if (!missingEq.length) {
-            if (gangMemberInfo.hack_asc_mult < strengthAscensionMultHardLimit) {
-              ns.gang.ascendMember(gangMemberName)
-              ascended = true
-              counter += 1
-            } else {
-              ns.gang.setMemberTask(gangMemberName, 'Terrorism')
             }
           }
 

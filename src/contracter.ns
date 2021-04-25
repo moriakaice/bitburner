@@ -1,4 +1,4 @@
-// Based on https://github.com/Penndrageist/bitburner-scripts/tree/master/scripts
+// Based on https://github.com/danielyxie/bitburner/blob/master/src/data/codingcontracttypes.ts
 const settings = {
   keys: {
     serverMap: 'BB_SERVER_MAP',
@@ -19,645 +19,383 @@ function localeHHMMSS(ms = 0) {
   return new Date(ms).toLocaleTimeString()
 }
 
-function recurseSumTriangle(data, sumsList, level, index, runningTotal, pathString = '') {
-  runningTotal += data[level][index]
-  pathString = pathString.concat(`${pathString.length === 0 ? '' : '+'}${data[level][index]}`)
-
-  if (level == data.length - 1) {
-    sumsList.push([runningTotal, pathString])
-    return
-  }
-
-  recurseSumTriangle(data, sumsList, level + 1, index, runningTotal, pathString)
-  recurseSumTriangle(data, sumsList, level + 1, index + 1, runningTotal, pathString)
-}
-
-function minimumPathSumTriangle(data) {
-  var sums = []
-
-  recurseSumTriangle(data, sums, 0, 0, 0)
-  sums.sort((a, b) => {
-    return a[0] - b[0]
+function convert2DArrayToString(arr) {
+  var components = []
+  arr.forEach(function (e) {
+    var s = e.toString()
+    s = ['[', s, ']'].join('')
+    components.push(s)
   })
-
-  return sums[0][0]
+  return components.join(',').replace(/\s/g, '')
 }
 
-function ValidateParentheses(parString) {
-  var parathesisStack = []
-  var openPar = '('
-  var closePar = ')'
-  var a = 'a'
-
-  for (var i = 0; i < parString.length; i++) {
-    if (parString[i] == a) continue
-
-    if (parString[i] == openPar) {
-      parathesisStack.push(openPar)
-    } else if (parString[i] == closePar) {
-      // cannot close if nothing has opened
-      if (parathesisStack.length === 0) {
-        return false
-      } else if (parathesisStack[parathesisStack.length - 1] == openPar) {
-        parathesisStack.pop()
-      } else {
-        // something wrong
-        return false
+const codingContractTypesMetadata = [
+  {
+    name: 'Find Largest Prime Factor',
+    solver: function (data) {
+      var fac = 2
+      var n = data
+      while (n > (fac - 1) * (fac - 1)) {
+        while (n % fac === 0) {
+          n = Math.round(n / fac)
+        }
+        ++fac
       }
-    } else {
-      // something wrong
-      return false
-    }
-  }
-
-  return parathesisStack.length === 0
-}
-
-function recurseRemoveCharacters(inputString, charsToRemove, workingList) {
-  if (charsToRemove === 0) {
-    if (!workingList.includes(inputString)) {
-      var isValid = ValidateParentheses(inputString)
-
-      if (isValid) {
-        workingList.push(inputString)
+      return n === 1 ? fac - 1 : n
+    },
+  },
+  {
+    name: 'Subarray with Maximum Sum',
+    solver: function (data) {
+      var nums = data.slice()
+      for (var i = 1; i < nums.length; i++) {
+        nums[i] = Math.max(nums[i], nums[i] + nums[i - 1])
       }
-    }
-
-    return
-  }
-
-  for (var i = 0; i < inputString.length; i++) {
-    if (inputString[i] == 'a') {
-      // only remove parentheses
-      continue
-    }
-
-    var remString = inputString.substring(0, i) + inputString.substring(i + 1, inputString.length)
-
-    recurseRemoveCharacters(remString, charsToRemove - 1, workingList)
-  }
-}
-
-function sanitizeParentheses(data) {
-  var validStrings = []
-
-  for (var i = 0; i < data.length && validStrings.length === 0; i++) {
-    var workingStrings = []
-
-    recurseRemoveCharacters(data, i, workingStrings)
-
-    validStrings = workingStrings
-  }
-
-  // might be impossible to validate
-  if (validStrings.length === 0) validStrings = ['']
-
-  return validStrings
-}
-
-function recurseGrid(grid, x, y) {
-  if (x == grid.length - 1 && y == grid[0].length - 1) {
-    return 1
-  } else if (x == grid.length || y == grid[0].length) {
-    return 0
-  } else if (grid[x][y] == 1) {
-    return 0
-  } else {
-    return recurseGrid(grid, x + 1, y) + recurseGrid(grid, x, y + 1)
-  }
-}
-
-// given array [x,y], how many paths from [0,0]->{x-1,y-1], going down/right only
-function uniqueGridPathsI(data) {
-  var grid = []
-
-  for (var x = 0; x < data[0]; x++) {
-    grid[x] = []
-    for (var y = 0; y < data[1]; y++) {
-      grid[x][y] = 0
-    }
-  }
-
-  return recurseGrid(grid, 0, 0)
-}
-
-// given a 10x10 grid of 0 or 1, unique paths from [0,0]->{x-1,y-1], going down/right only, avoiding 1s
-function uniqueGridPathsII(data) {
-  return recurseGrid(data, 0, 0)
-}
-
-function validateAddress(address) {
-  // "17+45*7-18"
-  var numbers = address.split('.')
-
-  if (numbers.length != 4) {
-    return false
-  }
-
-  for (var i = 0; i < numbers.length; i++) {
-    var octet = numbers[i]
-
-    if (octet.length > 1 && octet[0] == '0') {
-      return false
-    }
-
-    var octetAsNum = Number(octet)
-
-    if (octetAsNum < 0) return false
-    if (octetAsNum > 255) return false
-  }
-
-  return true
-}
-
-function generateAddresses(list, buildingExpr, remainingStr) {
-  if (remainingStr === undefined || remainingStr === null) remainingStr = ''
-
-  buildingExpr += ''
-  remainingStr += ''
-
-  if (remainingStr.length === 0) {
-    var processed = validateAddress(buildingExpr)
-
-    if (processed) {
-      list.push(buildingExpr)
-    }
-
-    return
-  }
-
-  var remString = remainingStr.substring(1)
-  if (remString === undefined || remString === null) remString = ''
-
-  generateAddresses(list, buildingExpr.concat(remainingStr[0]), remString)
-  generateAddresses(list, buildingExpr.concat('.', remainingStr[0]), remString)
-}
-
-function generateIPs(data) {
-  /*
-        Examples:
-        25525511135 -> [255.255.11.135, 255.255.111.35]
-        1938718066 -> [193.87.180.66]
-    */
-  var list = []
-
-  generateAddresses(list, data[0], data.substring(1))
-
-  if (list.length === 0) list = ['']
-
-  return list
-}
-
-function processExpression(expression) {
-  // "17+45*7-18"
-  var numbers = expression.split(/[+,\-,*]/g) // ["17","45","7","18"]
-  var operators = expression.split(/\d+/g) // ["",+,*,-,""]
-
-  if (operators.length > 0) {
-    operators.splice(0, 1)
-    operators.splice(operators.length - 1, 1)
-  }
-
-  var exprAsArr = []
-
-  while (operators.length > 0 || numbers.length > 0) {
-    if (numbers.length > 0) exprAsArr.push(numbers.shift())
-    if (operators.length > 0) exprAsArr.push(operators.shift())
-  }
-
-  while (exprAsArr.length > 1) {
-    var iMul = exprAsArr.indexOf('*')
-
-    if (iMul == -1) {
-      iMul = 1
-    }
-
-    var lhs = Number(exprAsArr[iMul - 1])
-    var rhs = Number(exprAsArr[iMul + 1])
-    var op = exprAsArr[iMul]
-
-    var res = -1
-
-    if (op == '+') {
-      res = lhs + rhs
-    } else if (op == '-') {
-      res = lhs - rhs
-    } else if (op == '*') {
-      res = lhs * rhs
-    }
-
-    exprAsArr.splice(iMul - 1, 3, res)
-  }
-
-  return exprAsArr[0]
-}
-
-function generateExpressions(target, list, buildingExpr, remainingStr) {
-  if (remainingStr === undefined || remainingStr === null) remainingStr = ''
-
-  buildingExpr += ''
-  remainingStr += ''
-
-  if (remainingStr.length === 0) {
-    var processed = processExpression(buildingExpr)
-
-    if (processed == target) {
-      list.push(buildingExpr)
-    }
-
-    return
-  }
-
-  var remString = remainingStr.substring(1)
-  if (remString === undefined || remString === null) remString = ''
-
-  generateExpressions(target, list, buildingExpr.concat(remainingStr[0]), remString)
-  generateExpressions(target, list, buildingExpr.concat('+', remainingStr[0]), remString)
-  generateExpressions(target, list, buildingExpr.concat('-', remainingStr[0]), remString)
-  generateExpressions(target, list, buildingExpr.concat('*', remainingStr[0]), remString)
-}
-
-function findAllValidMathExpressions(data) {
-  var str = data[0] + ''
-  var target = parseInt(data[1], 10)
-
-  var list = []
-
-  generateExpressions(target, list, str[0], str.substring(1))
-
-  return list
-}
-
-function integerPartition(number) {
-  // Create partition matrix for solving this task using Dynamic Programming.
-  const partitionMatrix = Array(number + 1)
-    .fill(null)
-    .map(() => {
-      return Array(number + 1).fill(null)
-    })
-
-  // Fill partition matrix with initial values.
-
-  // Let's fill the first row that represents how many ways we would have
-  // to combine the numbers 1, 2, 3, ..., n with number 0. We would have zero
-  // ways obviously since with zero number we may form only zero.
-  for (let numberIndex = 1; numberIndex <= number; numberIndex += 1) {
-    partitionMatrix[0][numberIndex] = 0
-  }
-
-  // Let's fill the first column. It represents the number of ways we can form
-  // number zero out of numbers 0, 0 and 1, 0 and 1 and 2, 0 and 1 and 2 and 3, ...
-  // Obviously there is only one way we could form number 0
-  // and it is with number 0 itself.
-  for (let summandIndex = 0; summandIndex <= number; summandIndex += 1) {
-    partitionMatrix[summandIndex][0] = 1
-  }
-
-  // Now let's go through other possible options of how we could form number m out of
-  // summands 0, 1, ..., m using Dynamic Programming approach.
-  for (let summandIndex = 1; summandIndex <= number; summandIndex += 1) {
-    for (let numberIndex = 1; numberIndex <= number; numberIndex += 1) {
-      if (summandIndex > numberIndex) {
-        // If summand number is bigger then current number itself then just it won't add
-        // any new ways of forming the number. Thus we may just copy the number from row above.
-        partitionMatrix[summandIndex][numberIndex] = partitionMatrix[summandIndex - 1][numberIndex]
-      } else {
-        /*
-         * The number of combinations would equal to number of combinations of forming the same
-         * number but WITHOUT current summand number PLUS number of combinations of forming the
-         * <current number - current summand> number but WITH current summand.
-         *
-         * Example:
-         * Number of ways to form 5 using summands {0, 1, 2} would equal the SUM of:
-         * - number of ways to form 5 using summands {0, 1} (we've excluded summand 2)
-         * - number of ways to form 3 (because 5 - 2 = 3) using summands {0, 1, 2}
-         * (we've included summand 2)
-         */
-        const combosWithoutSummand = partitionMatrix[summandIndex - 1][numberIndex]
-        const combosWithSummand = partitionMatrix[summandIndex][numberIndex - summandIndex]
-
-        partitionMatrix[summandIndex][numberIndex] = combosWithoutSummand + combosWithSummand
+      return Math.max.apply(Math, nums)
+    },
+  },
+  {
+    name: 'Total Ways to Sum',
+    solver: function (data) {
+      var ways = [1]
+      ways.length = data + 1
+      ways.fill(0, 1)
+      for (var i = 1; i < data; ++i) {
+        for (var j = i; j <= data; ++j) {
+          ways[j] += ways[j - i]
+        }
       }
-    }
-  }
-
-  return partitionMatrix[number][number]
-}
-
-function lpf(a) {
-  let b = 2
-  while (a > b) {
-    if (a % b === 0) {
-      a = a / b
-      b = 2
-    } else {
-      b += 1
-    }
-  }
-
-  return b
-}
-
-function sumSubarrays(arr) {
-  var sumMax = arr[0]
-
-  for (var i = 0; i < arr.length; i++) {
-    sumMax = Math.max(sumMax, arr[i])
-
-    var runningTotal = arr[i]
-    for (var j = i + 1; j < arr.length; j++) {
-      runningTotal += arr[j]
-      sumMax = Math.max(sumMax, runningTotal)
-    }
-  }
-
-  return sumMax
-}
-
-function spiralise(grid) {
-  var yDim = grid.length
-
-  if (yDim === 1) return grid[0]
-
-  var xDim = grid[0].length
-  var output = []
-
-  var xMin = 0
-  var xMax = xDim - 1
-  var x = 0
-  var xDir = 1
-
-  var yMin = 1
-  var yMax = yDim - 1
-  var y = 0
-  var yDir = 0
-
-  while (output.length < xDim * yDim) {
-    output.push(grid[y][x])
-
-    x += xDir
-    y += yDir
-
-    if (x >= xMax && xDir == 1 && yDir === 0) {
-      x = xMax
-      xDir = 0
-      yDir = 1
-      xMax--
-    } else if (x <= xMin && xDir == -1 && yDir === 0) {
-      x = xMin
-      xDir = 0
-      yDir = -1
-      xMin++
-    } else if (y >= yMax && xDir === 0 && yDir == 1) {
-      y = yMax
-      xDir = -1
-      yDir = 0
-      yMax--
-    } else if (y <= yMin && xDir === 0 && yDir == -1) {
-      y = yMin
-      xDir = 1
-      yDir = 0
-      yMin++
-    }
-  }
-
-  return output
-}
-
-function recurseJump(data, index) {
-  // can't check passed the end of the array
-  // but if the input value exceed the array length, we must've made it
-  if (index >= data.length) return 1
-
-  // if we're exactly at the end of the array
-  // we've made it
-  if (index == data.length - 1) return 1
-
-  // we're not at the end of the array, but this position is 0
-  // and so we can't jump further from here
-  if (data[index] === 0) return 0
-
-  // check each jumped forward position, up to the extent of
-  // the current cell's value ahead of the current cell
-  for (var i = index + 1; i < index + data[index]; i++) {
-    // if we find a path, we've made it
-    // no need to check others, so just return
-    if (recurseJump(data, i) == 1) return 1
-  }
-
-  return 0
-}
-
-function arrayJumping(data) {
-  return recurseJump(data, 0)
-}
-
-function mergeIntervals(data) {
-  data.sort((a, b) => {
-    return a[0] - b[0]
-  })
-
-  var didMerge = false
-
-  for (var i = 0; i < data.length - 1 && !didMerge; i++) {
-    var intervalL = data[i]
-    var intervalR = data[i + 1]
-
-    if (intervalL[0] <= intervalR[0] && intervalR[0] <= intervalL[1]) {
-      var newInterval = [Math.min(intervalL[0], intervalR[0]), Math.max(intervalL[1], intervalR[1])]
-
-      data.splice(i, 2, newInterval)
-
-      didMerge = true
-      break
-    }
-  }
-
-  return didMerge ? mergeIntervals(data) : data
-}
-
-function totalValueOfPairs(stockPairs, maxTrades = -1) {
-  var profit = 0
-  if (maxTrades <= 0) maxTrades = stockPairs.length
-
-  var stockPairsCpy = stockPairs.slice()
-  stockPairsCpy.sort((a, b) => {
-    return b[1] - b[0] - (a[1] - a[0])
-  })
-
-  for (var i = 0; i < maxTrades && i < stockPairsCpy.length; i++) {
-    profit += stockPairsCpy[i][1] - stockPairsCpy[i][0]
-  }
-
-  return profit
-}
-
-function recursiveMergeStock(outputList, pairsToMerge, maxStepSize, maxTrades, maxDepth = 20) {
-  if (pairsToMerge.length <= maxTrades || maxStepSize <= 0 || maxDepth <= 0) {
-    outputList.push(pairsToMerge.slice())
-    return
-  }
-
-  for (var i = 0; i < pairsToMerge.length - 1; i++) {
-    var pairA = pairsToMerge[i]
-    var lowValue = pairA[0]
-    var highValue = pairA[1]
-
-    var mip = []
-
-    var maxIndex = Math.min(pairsToMerge.length, i + maxStepSize + 1)
-
-    for (var j = i + 1; j < maxIndex; j++) {
-      var pairB = pairsToMerge[j]
-
-      // Next pair's low value is lower. Can't merge further right.
-      if (lowValue >= pairB[0]) break
-
-      if (lowValue < pairB[0] && pairB[1] > highValue) {
-        mip = [i, j]
-        highValue = pairB[1]
-      }
-    }
-
-    if (mip.length == 2) {
-      var workingPairs = pairsToMerge.slice()
-
-      var mergedPairs = [workingPairs[mip[0]][0], workingPairs[mip[1]][1]]
-
-      workingPairs.splice(mip[0], mip[1] - mip[0] + 1, mergedPairs)
-
-      recursiveMergeStock(outputList, workingPairs, workingPairs.length - 1, maxTrades, maxDepth - 1)
-    }
-  }
-
-  outputList.push(pairsToMerge.slice())
-}
-
-function calculateStock(maxTrades, stockPrices) {
-  var stockPairs = []
-
-  var highIndex = stockPrices.length - 1
-  var highPrice = stockPrices[highIndex]
-
-  var prevPrice = highPrice
-  for (var i = stockPrices.length - 2; i >= 0; i--) {
-    var price = stockPrices[i]
-
-    if (highIndex == -1 || highPrice == -1) {
-      highIndex = i
-      highPrice = price
-    } else if (price > prevPrice) {
-      if (i + 1 != highIndex) {
-        stockPairs.unshift([prevPrice, highPrice])
+      return ways[data]
+    },
+  },
+  {
+    name: 'Spiralize Matrix',
+    solver: function (data, ans) {
+      var spiral = []
+      var m = data.length
+      var n = data[0].length
+      var u = 0
+      var d = m - 1
+      var l = 0
+      var r = n - 1
+      var k = 0
+      while (true) {
+        // Up
+        for (var col = l; col <= r; col++) {
+          spiral[k] = data[u][col]
+          ++k
+        }
+        if (++u > d) {
+          break
+        }
+        // Right
+        for (var row = u; row <= d; row++) {
+          spiral[k] = data[row][r]
+          ++k
+        }
+        if (--r < l) {
+          break
+        }
+        // Down
+        for (var col = r; col >= l; col--) {
+          spiral[k] = data[d][col]
+          ++k
+        }
+        if (--d < u) {
+          break
+        }
+        // Left
+        for (var row = d; row >= u; row--) {
+          spiral[k] = data[row][l]
+          ++k
+        }
+        if (++l > r) {
+          break
+        }
       }
 
-      highIndex = i
-      highPrice = price
-    } else if (i === 0) {
-      stockPairs.unshift([price, highPrice])
-    }
+      return spiral
+    },
+  },
+  {
+    name: 'Array Jumping Game',
+    solver: function (data) {
+      var n = data.length
+      var i = 0
+      for (var reach = 0; i < n && i <= reach; ++i) {
+        reach = Math.max(i + data[i], reach)
+      }
+      var solution = i === n
+      return solution ? 1 : 0
+    },
+  },
+  {
+    name: 'Merge Overlapping Intervals',
+    solver: function (data) {
+      var intervals = data.slice()
+      intervals.sort(function (a, b) {
+        return a[0] - b[0]
+      })
+      var result = []
+      var start = intervals[0][0]
+      var end = intervals[0][1]
+      for (var _i = 0, intervals_1 = intervals; _i < intervals_1.length; _i++) {
+        var interval = intervals_1[_i]
+        if (interval[0] <= end) {
+          end = Math.max(end, interval[1])
+        } else {
+          result.push([start, end])
+          start = interval[0]
+          end = interval[1]
+        }
+      }
+      result.push([start, end])
+      var sanitizedResult = convert2DArrayToString(result)
+      return sanitizedResult
+    },
+  },
+  {
+    name: 'Generate IP Addresses',
+    solver: function (data, ans) {
+      var ret = []
+      for (var a = 1; a <= 3; ++a) {
+        for (var b = 1; b <= 3; ++b) {
+          for (var c = 1; c <= 3; ++c) {
+            for (var d = 1; d <= 3; ++d) {
+              if (a + b + c + d === data.length) {
+                var A = parseInt(data.substring(0, a), 10)
+                var B = parseInt(data.substring(a, a + b), 10)
+                var C = parseInt(data.substring(a + b, a + b + c), 10)
+                var D = parseInt(data.substring(a + b + c, a + b + c + d), 10)
+                if (A <= 255 && B <= 255 && C <= 255 && D <= 255) {
+                  var ip = [A.toString(), '.', B.toString(), '.', C.toString(), '.', D.toString()].join('')
+                  if (ip.length === data.length + 3) {
+                    ret.push(ip)
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      return ret
+    },
+  },
+  {
+    name: 'Algorithmic Stock Trader I',
+    solver: function (data) {
+      var maxCur = 0
+      var maxSoFar = 0
+      for (var i = 1; i < data.length; ++i) {
+        maxCur = Math.max(0, (maxCur += data[i] - data[i - 1]))
+        maxSoFar = Math.max(maxCur, maxSoFar)
+      }
+      return maxSoFar.toString()
+    },
+  },
+  {
+    name: 'Algorithmic Stock Trader II',
+    solver: function (data) {
+      var profit = 0
+      for (var p = 1; p < data.length; ++p) {
+        profit += Math.max(data[p] - data[p - 1], 0)
+      }
+      return profit.toString()
+    },
+  },
+  {
+    name: 'Algorithmic Stock Trader III',
+    solver: function (data) {
+      var hold1 = Number.MIN_SAFE_INTEGER
+      var hold2 = Number.MIN_SAFE_INTEGER
+      var release1 = 0
+      var release2 = 0
+      for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
+        var price = data_1[_i]
+        release2 = Math.max(release2, hold2 + price)
+        hold2 = Math.max(hold2, release1 - price)
+        release1 = Math.max(release1, hold1 + price)
+        hold1 = Math.max(hold1, price * -1)
+      }
+      return release2.toString()
+    },
+  },
+  {
+    name: 'Algorithmic Stock Trader IV',
+    solver: function (data) {
+      var k = data[0]
+      var prices = data[1]
+      var len = prices.length
+      if (len < 2) {
+        return 0
+      }
+      if (k > len / 2) {
+        var res = 0
+        for (var i = 1; i < len; ++i) {
+          res += Math.max(prices[i] - prices[i - 1], 0)
+        }
+        return res
+      }
+      var hold = []
+      var rele = []
+      hold.length = k + 1
+      rele.length = k + 1
+      for (var i = 0; i <= k; ++i) {
+        hold[i] = Number.MIN_SAFE_INTEGER
+        rele[i] = 0
+      }
+      var cur
+      for (var i = 0; i < len; ++i) {
+        cur = prices[i]
+        for (var j = k; j > 0; --j) {
+          rele[j] = Math.max(rele[j], hold[j] + cur)
+          hold[j] = Math.max(hold[j], rele[j - 1] - cur)
+        }
+      }
+      return rele[k]
+    },
+  },
+  {
+    name: 'Minimum Path Sum in a Triangle',
+    solver: function (data) {
+      var n = data.length
+      var dp = data[n - 1].slice()
+      for (var i = n - 2; i > -1; --i) {
+        for (var j = 0; j < data[i].length; ++j) {
+          dp[j] = Math.min(dp[j], dp[j + 1]) + data[i][j]
+        }
+      }
+      return dp[0]
+    },
+  },
+  {
+    name: 'Unique Paths in a Grid I',
+    solver: function (data) {
+      var n = data[0] // Number of rows
+      var m = data[1] // Number of columns
+      var currentRow = []
+      currentRow.length = n
+      for (var i = 0; i < n; i++) {
+        currentRow[i] = 1
+      }
+      for (var row = 1; row < m; row++) {
+        for (var i = 1; i < n; i++) {
+          currentRow[i] += currentRow[i - 1]
+        }
+      }
+      return currentRow[n - 1]
+    },
+  },
+  {
+    name: 'Unique Paths in a Grid II',
+    solver: function (data) {
+      var obstacleGrid = []
+      obstacleGrid.length = data.length
+      for (var i = 0; i < obstacleGrid.length; ++i) {
+        obstacleGrid[i] = data[i].slice()
+      }
+      for (var i = 0; i < obstacleGrid.length; i++) {
+        for (var j = 0; j < obstacleGrid[0].length; j++) {
+          if (obstacleGrid[i][j] == 1) {
+            obstacleGrid[i][j] = 0
+          } else if (i == 0 && j == 0) {
+            obstacleGrid[0][0] = 1
+          } else {
+            obstacleGrid[i][j] = (i > 0 ? obstacleGrid[i - 1][j] : 0) + (j > 0 ? obstacleGrid[i][j - 1] : 0)
+          }
+        }
+      }
+      return obstacleGrid[obstacleGrid.length - 1][obstacleGrid[0].length - 1]
+    },
+  },
+  {
+    name: 'Sanitize Parentheses in Expression',
+    solver: function (data) {
+      var left = 0
+      var right = 0
+      var res = []
+      for (var i = 0; i < data.length; ++i) {
+        if (data[i] === '(') {
+          ++left
+        } else if (data[i] === ')') {
+          left > 0 ? --left : ++right
+        }
+      }
+      function dfs(pair, index, left, right, s, solution, res) {
+        if (s.length === index) {
+          if (left === 0 && right === 0 && pair === 0) {
+            for (var i = 0; i < res.length; i++) {
+              if (res[i] === solution) {
+                return
+              }
+            }
+            res.push(solution)
+          }
+          return
+        }
+        if (s[index] === '(') {
+          if (left > 0) {
+            dfs(pair, index + 1, left - 1, right, s, solution, res)
+          }
+          dfs(pair + 1, index + 1, left, right, s, solution + s[index], res)
+        } else if (s[index] === ')') {
+          if (right > 0) dfs(pair, index + 1, left, right - 1, s, solution, res)
+          if (pair > 0) dfs(pair - 1, index + 1, left, right, s, solution + s[index], res)
+        } else {
+          dfs(pair, index + 1, left, right, s, solution + s[index], res)
+        }
+      }
+      dfs(0, 0, left, right, data, '', res)
 
-    prevPrice = price
-  }
+      return res
+    },
+  },
+  {
+    name: 'Find All Valid Math Expressions',
+    solver: function (data) {
+      var num = data[0]
+      var target = data[1]
+      function helper(res, path, num, target, pos, evaluated, multed) {
+        if (pos === num.length) {
+          if (target === evaluated) {
+            res.push(path)
+          }
+          return
+        }
+        for (var i = pos; i < num.length; ++i) {
+          if (i != pos && num[pos] == '0') {
+            break
+          }
+          var cur = parseInt(num.substring(pos, i + 1))
+          if (pos === 0) {
+            helper(res, path + cur, num, target, i + 1, cur, cur)
+          } else {
+            helper(res, path + '+' + cur, num, target, i + 1, evaluated + cur, cur)
+            helper(res, path + '-' + cur, num, target, i + 1, evaluated - cur, -cur)
+            helper(res, path + '*' + cur, num, target, i + 1, evaluated - multed + multed * cur, multed * cur)
+          }
+        }
+      }
 
-  if (stockPairs.length === 0) return 0
-
-  if (maxTrades <= 0) {
-    maxTrades = stockPairs.length
-  }
-
-  var outList = []
-
-  // function recursiveMergeStock(outputList, pairsToMerge, maxStepSize, maxTrades)
-  recursiveMergeStock(outList, stockPairs, stockPairs.length, maxTrades, 40)
-
-  outList.sort((a, b) => {
-    return totalValueOfPairs(b, maxTrades) - totalValueOfPairs(a, maxTrades)
-  })
-
-  var profit = 0
-
-  var finalStockPairs = outList[0]
-
-  profit = totalValueOfPairs(finalStockPairs, maxTrades)
-
-  return profit
-}
-
-// stock trading, single transactions
-function algorithmicStockI(data) {
-  return calculateStock(1, data)
-}
-
-// stock trading, no limit on transactions
-function algorithmicStockII(data) {
-  // example: 129,25,109,86,19,7,199,21,27,173,83,133
-  // ans: 478
-
-  return calculateStock(0, data)
-}
-
-// stock trading, up to 2 transactions
-function algorithmicStockIII(data) {
-  return calculateStock(2, data)
-}
-
-// stock trading, up to k transactions. data[0]==k, data[1]==stockPriceArray
-function algorithmicStockIV(data) {
-  return calculateStock(data[0], data[1])
-}
+      if (num == null || num.length === 0) {
+        return []
+      }
+      var result = []
+      helper(result, '', num, target, 0, 0, 0)
+      return result
+    },
+  },
+]
 
 function findAnswer(contract) {
   let answer
 
-  switch (contract.type) {
-    case 'Find Largest Prime Factor':
-      answer = lpf(contract.data)
-      break
-    case 'Subarray with Maximum Sum':
-      answer = sumSubarrays(contract.data)
-      break
-    case 'Total Ways to Sum':
-      answer = integerPartition(contract.data) - 1
-      break
-    case 'Spiralize Matrix':
-      answer = spiralise(contract.data)
-      break
-    case 'Array Jumping Game':
-      answer = arrayJumping(contract.data)
-      break
-    case 'Merge Overlapping Intervals':
-      answer = mergeIntervals(contract.data)
-      break
-    case 'Generate IP Addresses':
-      answer = generateIPs(contract.data)
-      break
-    case 'Algorithmic Stock Trader I':
-      answer = algorithmicStockI(contract.data)
-      break
-    case 'Algorithmic Stock Trader II':
-      answer = algorithmicStockII(contract.data)
-      break
-    case 'Algorithmic Stock Trader III':
-      answer = algorithmicStockIII(contract.data)
-      break
-    case 'Algorithmic Stock Trader IV':
-      answer = algorithmicStockIV(contract.data)
-      break
-    case 'Minimum Path Sum in a Triangle':
-      answer = minimumPathSumTriangle(contract.data)
-      break
-    case 'Unique Paths in a Grid I':
-      answer = uniqueGridPathsI(contract.data)
-      break
-    case 'Unique Paths in a Grid II':
-      answer = uniqueGridPathsII(contract.data)
-      break
-    case 'Sanitize Parentheses in Expression':
-      answer = sanitizeParentheses(contract.data)
-      break
-    case 'Find All Valid Math Expressions':
-      answer = findAllValidMathExpressions(contract.data)
+  const codingContractSolution = codingContractTypesMetadata.find((codingContractTypeMetadata) => codingContractTypeMetadata.name === contract.type)
+
+  if (codingContractSolution) {
+    answer = codingContractSolution.solver(contract.data)
+  } else {
+    console.error('Unable to find answer for', contract)
   }
 
   return answer

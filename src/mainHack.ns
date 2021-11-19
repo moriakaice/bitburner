@@ -7,7 +7,7 @@ const settings = {
   maxMoneyMultiplayer: 0.9,
   minSecurityWeight: 100,
   mapRefreshInterval: 24 * 60 * 60 * 1000,
-  maxWeakenTime: 30 * 60,
+  maxWeakenTime: 30 * 60 * 1000,
   keys: {
     serverMap: 'BB_SERVER_MAP',
   },
@@ -88,32 +88,30 @@ function weakenCyclesForHack(hackCycles) {
   return Math.max(0, Math.ceil(hackCycles * (settings.changes.hack / settings.changes.weaken)))
 }
 
-function getHackableServers(ns, servers) {
+async function getHackableServers(ns, servers) {
   const playerDetails = getPlayerDetails(ns)
 
   const hackableServers = Object.keys(servers)
     .filter((hostname) => ns.serverExists(hostname))
     .filter((hostname) => servers[hostname].ports <= playerDetails.portHacks || ns.hasRootAccess(hostname))
-    .map((hostname) => {
-      if (hostname !== 'home') {
-        if (!ns.hasRootAccess(hostname)) {
-          hackPrograms.forEach((hackProgram) => {
-            if (ns.fileExists(hackProgram, 'home')) {
-              ns[hackProgram.split('.').shift().toLocaleLowerCase()](hostname)
-            }
-          })
-          ns.nuke(hostname)
-        }
-
-        ns.scp(hackScripts, hostname)
-      }
-
-      return hostname
-    })
     .filter((hostname) => servers[hostname].ram >= 2)
 
-  hackableServers.sort((a, b) => servers[a].ram - servers[b].ram)
+  for (const hostname of hackableServers) {
+    if (hostname === 'home') continue;
+    if (!ns.hasRootAccess(hostname)) {
+      hackPrograms.forEach((hackProgram) => {
+        if (ns.fileExists(hackProgram, 'home')) {
+          ns[hackProgram.split('.').shift().toLocaleLowerCase()](hostname)
+        }
+      })
+      ns.nuke(hostname)
+    }
 
+    await ns.scp(hackScripts, hostname)
+
+  }
+
+  hackableServers.sort((a, b) => servers[a].ram - servers[b].ram)
   return hackableServers
 }
 
@@ -127,7 +125,7 @@ function findTargetServer(ns, serversList, servers, serverExtraData) {
     .filter((hostname) => ns.getWeakenTime(hostname) < settings.maxWeakenTime)
 
   let weightedServers = serversList.map((hostname) => {
-    const fullHackCycles = Math.ceil(100 / Math.max(0.00000001, ns.hackAnalyzePercent(hostname)))
+    const fullHackCycles = Math.ceil(100 / Math.max(0.00000001, ns.hackAnalyze(hostname)))
 
     serverExtraData[hostname] = {
       fullHackCycles,
@@ -174,10 +172,10 @@ export async function main(ns) {
     }
     serverMap.servers.home.ram = Math.max(0, serverMap.servers.home.ram - settings.homeRamReserved)
 
-    const hackableServers = getHackableServers(ns, serverMap.servers)
+    const hackableServers = await getHackableServers(ns, serverMap.servers)
+
     const targetServers = findTargetServer(ns, hackableServers, serverMap.servers, serverExtraData)
     const bestTarget = targetServers.shift()
-
     const hackTime = ns.getHackTime(bestTarget) * 1000
     const growTime = ns.getGrowTime(bestTarget) * 1000
     const weakenTime = ns.getWeakenTime(bestTarget) * 1000
@@ -214,8 +212,7 @@ export async function main(ns) {
       )}`
     )
     ns.tprint(
-      `[${localeHHMMSS()}] Stock values: baseSecurity: ${serverMap.servers[bestTarget].baseSecurityLevel}; minSecurity: ${
-        serverMap.servers[bestTarget].minSecurityLevel
+      `[${localeHHMMSS()}] Stock values: baseSecurity: ${serverMap.servers[bestTarget].baseSecurityLevel}; minSecurity: ${serverMap.servers[bestTarget].minSecurityLevel
       }; maxMoney: $${numberWithCommas(parseInt(serverMap.servers[bestTarget].maxMoney, 10))}`
     )
     ns.tprint(`[${localeHHMMSS()}] Current values: security: ${Math.floor(securityLevel * 1000) / 1000}; money: $${numberWithCommas(parseInt(money, 10))}`)
@@ -238,8 +235,7 @@ export async function main(ns) {
       }
 
       ns.tprint(
-        `[${localeHHMMSS()}] Cycles ratio: ${growCycles} grow cycles; ${weakenCycles} weaken cycles; expected security reduction: ${
-          Math.floor(settings.changes.weaken * weakenCycles * 1000) / 1000
+        `[${localeHHMMSS()}] Cycles ratio: ${growCycles} grow cycles; ${weakenCycles} weaken cycles; expected security reduction: ${Math.floor(settings.changes.weaken * weakenCycles * 1000) / 1000
         }`
       )
 

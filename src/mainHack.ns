@@ -183,8 +183,8 @@ export async function main(ns) {
     const growDelay = Math.max(0, weakenTime - growTime - 15 * 1000)
     const hackDelay = Math.max(0, growTime + growDelay - hackTime - 15 * 1000)
     
-    const hackDelay = 0
-    const growDelay = 0
+    hackDelay = 0
+    growDelay = 0
     
     const securityLevel = ns.getServerSecurityLevel(bestTarget)
     const money = ns.getServerMoneyAvailable(bestTarget)

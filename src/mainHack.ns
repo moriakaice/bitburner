@@ -180,8 +180,8 @@ export async function main(ns) {
     const growTime = ns.getGrowTime(bestTarget)
     const weakenTime = ns.getWeakenTime(bestTarget)
 
-    const growDelay = 0
-    const hackDelay = 0
+    const growDelay = 5000
+    const hackDelay = 5000
     
     const securityLevel = ns.getServerSecurityLevel(bestTarget)
     const money = ns.getServerMoneyAvailable(bestTarget)

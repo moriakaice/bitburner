@@ -46,7 +46,7 @@ function processTick(ns, stockSymbol) {
     }
 
     if (profitMarginCrossed) {
-      const shortSellValue = ns.sellShort(stockSymbol, 9999999999999999999999999)
+      const shortSellValue = ns.stock.sellShort(stockSymbol, 9999999999999999999999999)
       if (shortSellValue && profitTracker.volume) {
         const profit = profitTracker.volume * (profitTracker.value - shortSellValue) - 200000
         corpus += profit
@@ -68,7 +68,7 @@ function processTick(ns, stockSymbol) {
         }
       }
 
-      const longSellValue = ns.sellStock(stockSymbol, 9999999999999999999999999)
+      const longSellValue = ns.stock.sell(stockSymbol, 9999999999999999999999999)
       if (longSellValue && profitTracker.volume) {
         const profit = profitTracker.volume * (longSellValue - profitTracker.value) - 200000
         corpus += profit
@@ -99,7 +99,7 @@ function processTick(ns, stockSymbol) {
     if (positionChanged) {
       if (rising) {
         // It's rising now, sell short, buy long
-        const shortSellValue = ns.sellShort(stockSymbol, 9999999999999999999999999)
+        const shortSellValue = ns.stock.sellShort(stockSymbol, 9999999999999999999999999)
         if (shortSellValue && profitTracker.volume) {
           const profit = profitTracker.volume * (profitTracker.value - shortSellValue) - 200000
           corpus += profit
@@ -161,7 +161,7 @@ function processTick(ns, stockSymbol) {
         }
       } else {
         // It's falling now, sell long, buy short
-        const longSellValue = ns.sellStock(stockSymbol, 9999999999999999999999999)
+        const longSellValue = ns.stock.sell(stockSymbol, 9999999999999999999999999)
         if (longSellValue && profitTracker.volume) {
           const profit = profitTracker.volume * (longSellValue - profitTracker.value) - 200000
           corpus += profit

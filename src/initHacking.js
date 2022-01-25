@@ -6,7 +6,7 @@ const filesToDownload = [
   'grow.js',
   'hack.js',
   'weaken.js',
-  'playerServersjs',
+  'playerServers.js',
   'killAll.js',
   'runHacking.js',
   'find.js',

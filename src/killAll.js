@@ -15,6 +15,9 @@ const scriptsToKill = [
   'initHacking.js',
   'start.js',
   'find.js',
+  'startStock.js',
+  'stockMarketer.js',
+  'stockMarketer4S.js',
 ]
 
 function getItem(key) {

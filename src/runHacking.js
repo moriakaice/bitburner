@@ -28,7 +28,7 @@ export async function main(ns) {
         ns.stock.short();
       }
       catch (e) {
-        //ns.tprint(e.toString())
+        ns.tprint(e.toString())
         const cantShort = e.toString().includes("BitNode-8")
         if (player.has4SDataTixApi) {
           if (cantShort) {
@@ -44,8 +44,8 @@ export async function main(ns) {
         }
       }
     }
-    ns.tprint(`[${localeHHMMSS()}] Spawning mainHack.js`)
-    ns.spawn('mainHack.js', 1)
+    ns.tprint(`[${localeHHMMSS()}] Spawning spider.js`)
+    ns.spawn('spider.js', 1, 'mainHack.js')
   } else {
     ns.tprint(`[${localeHHMMSS()}] Spawning spider.js`)
     ns.spawn('spider.js', 1, 'mainHack.js')

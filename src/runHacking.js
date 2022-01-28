@@ -19,34 +19,33 @@ export async function main(ns) {
 
   if (homeRam >= 32) {
     ns.tprint(`[${localeHHMMSS()}] Spawning spider.js`)
-    await ns.run('spider.js', 1, 'mainHack.js')
-    await ns.sleep(3000)
-    ns.tprint(`[${localeHHMMSS()}] Spawning playerServers.js`)
-    ns.spawn('playerServers.js', 1)
-    const player = eval("ns.getPlayer();") //hehe
-    if (player.hasTixApiAccess) {
-      try {
-        eval("ns.stock.short();"); //Schauen ob eval geht
-      }
-      catch (e){
-      const cantShort = e.toString().includes("Cannot use short")
-      if (player.has4SDataTixApi && cantShort) {
-        ns.tprint(`[${localeHHMMSS()}] Spawning startStock.js`)
-        ns.spawn('startStock.js', 1)
-      }else if (player.has4SDataTixApi && !cantShort){
-        ns.tprint(`[${localeHHMMSS()}] Spawning stockMarketer4s.js`)
-        ns.spawn('stockMarketer4s.js', 1)
-      }else if (!cantShort){
-        ns.tprint(`[${localeHHMMSS()}] Spawning stockMarketer.js`)
-        ns.spawn('stockMarketer.js', 1)
-      }
-      }
+    await ns.run('spider.js', 1, 'playerServers.js')
 
+    let player = ns.getPlayer();
+    if (player.hasTixApiAccess) {
+      ns.tprint(`[${localeHHMMSS()}] Player has Tix API Access`)
+      try {
+        ns.stock.short();
+      }
+      catch (e) {
+        //ns.tprint(e.toString())
+        const cantShort = e.toString().includes("BitNode-8")
+        if (player.has4SDataTixApi) {
+          if (cantShort) {
+            ns.tprint(`[${localeHHMMSS()}] Spawning startStock.js`)
+            await ns.run('startStock.js', 1)
+          } else {
+            ns.tprint(`[${localeHHMMSS()}] Spawning stockMarketer4s.js`)
+            await ns.run('stockMarketer4s.js', 1)
+          }
+        } else if (!player.has4SDataTixApi && !cantShort) {
+          ns.tprint(`[${localeHHMMSS()}] Spawning stockMarketer.js`)
+          await ns.run('stockMarketer.js', 1)
+        }
+      }
     }
-    if (player.has4SDataTixApi && player.hasTixApiAccess) {
-      ns.tprint(`[${localeHHMMSS()}] Spawning startStock.js`)
-      ns.spawn('startStock.js', 1)
-    }
+    ns.tprint(`[${localeHHMMSS()}] Spawning mainHack.js`)
+    ns.spawn('mainHack.js', 1)
   } else {
     ns.tprint(`[${localeHHMMSS()}] Spawning spider.js`)
     ns.spawn('spider.js', 1, 'mainHack.js')

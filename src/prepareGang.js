@@ -22,7 +22,7 @@ export async function main(ns) {
       name: equipmentName,
       type: ns.gang.getEquipmentType(equipmentName),
       cost: ns.gang.getEquipmentCost(equipmentName),
-      ...ns.gang.getEquipmentStats(equipmentName),
+      ...js.gang.getEquipmentStats(equipmentName),
     }
   })
   equpiments.sort((a, b) => a.cost - b.cost)

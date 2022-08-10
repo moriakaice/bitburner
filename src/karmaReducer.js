@@ -24,7 +24,7 @@ function localeHHMMSS(ms = 0) {
 }
 
 export async function main(ns) {
-  ns.tprint(`[${localeHHMMSS()}] Starting karmaReducer.ns`)
+  ns.tprint(`[${localeHHMMSS()}] Starting karmaReducer.js`)
 
   let hostname = ns.getHostname()
 

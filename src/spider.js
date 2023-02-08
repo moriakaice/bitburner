@@ -58,7 +58,7 @@ export async function main(ns) {
       growth: ns.getServerGrowth(host),
       minSecurityLevel: ns.getServerMinSecurityLevel(host),
       baseSecurityLevel: ns.getServerBaseSecurityLevel(host),
-      ram: ns.getServerRam(host)[0],
+      ram: ns.getServerMaxRam(host)[0],
       files: ns.ls(host),
     }
 
